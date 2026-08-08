@@ -1,0 +1,4 @@
+2026-07-23 23:27:31.851 +05:30 [INF] HTTP POST /api/auth/register responded 200 in 11.8105 ms
+2026-07-23 23:29:16.970 +05:30 [INF] HTTP GET /api/nonexistent responded 404 in 55.8671 ms
+2026-07-23 23:29:16.990 +05:30 [INF] HTTP GET /health responded 200 in 80.5422 ms
+2026-07-23 23:29:17.221 +05:30 [INF] HTTP POST /api/auth/revoke responded 401 in 9.6916 ms

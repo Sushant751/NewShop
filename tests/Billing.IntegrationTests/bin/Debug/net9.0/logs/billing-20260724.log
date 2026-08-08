@@ -1,0 +1,24 @@
+2026-07-24 10:14:57.936 +05:30 [ERR] Unhandled exception. Path: /api/auth/login. Message: Object reference not set to an instance of an object.
+System.NullReferenceException: Object reference not set to an instance of an object.
+   at Billing.API.Controllers.BaseApiController.ToActionResult[T](Result`1 result) in d:\Projects\ERP\NewShop\src\Billing.API\Controllers\BaseApiController.cs:line 26
+   at Billing.API.Controllers.AuthController.Login(LoginRequest request, CancellationToken cancellationToken) in d:\Projects\ERP\NewShop\src\Billing.API\Controllers\AuthController.cs:line 31
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.TaskOfIActionResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Awaited|12_0(ControllerActionInvoker invoker, ValueTask`1 actionResultValueTask)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.InvokeInnerFilterAsync()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at Billing.Infrastructure.Middleware.TenantContextMiddleware.InvokeAsync(HttpContext context, ITenantContext tenantContext) in d:\Projects\ERP\NewShop\src\Billing.Infrastructure\Middleware\TenantContextMiddleware.cs:line 57
+   at Billing.Infrastructure.Middleware.GlobalExceptionMiddleware.InvokeAsync(HttpContext context) in d:\Projects\ERP\NewShop\src\Billing.Infrastructure\Middleware\GlobalExceptionMiddleware.cs:line 31
+2026-07-24 10:14:57.953 +05:30 [ERR] HTTP POST /api/auth/login responded 500 in 95.4055 ms
+2026-07-24 10:14:58.090 +05:30 [INF] HTTP POST /api/auth/login responded 200 in 17.2457 ms
+2026-07-24 10:14:58.103 +05:30 [INF] HTTP POST /api/auth/revoke responded 401 in 6.1221 ms
+2026-07-24 10:14:58.114 +05:30 [INF] HTTP POST /api/auth/refresh responded 200 in 6.9134 ms
+2026-07-24 10:14:58.121 +05:30 [INF] HTTP POST /api/auth/login responded 422 in 1.2624 ms
+2026-07-24 10:14:58.131 +05:30 [INF] HTTP POST /api/auth/register responded 200 in 5.3666 ms

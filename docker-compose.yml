@@ -1,0 +1,126 @@
+# ==============================================================================
+# docker-compose.yml — Multi-Tenant Billing & POS SaaS Application
+# Orchestrates: SQL Server, Redis, .NET API, React Frontend
+# ==============================================================================
+# Usage:
+#   docker-compose up -d          # Start all services
+#   docker-compose down           # Stop all services
+#   docker-compose logs -f api    # Follow API logs
+#   docker-compose build          # Rebuild images
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------
+  # SQL Server 2022 database
+  # ----------------------------------------------------------------
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: billing-db
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${DB_SA_PASSWORD:-YourStrong!Passw0rd}
+      MSSQL_PID: "Express"
+      MSSQL_TCP_PORT: 1433
+    ports:
+      - "${DB_PORT:-1433}:1433"
+    volumes:
+      - db-data:/var/opt/mssql
+      - ./database/01_Schema.sql:/docker-entrypoint-initdb.d/01_Schema.sql:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    networks:
+      - billing-network
+    restart: unless-stopped
+
+  # ----------------------------------------------------------------
+  # Redis cache
+  # ----------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: billing-redis
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - billing-network
+    restart: unless-stopped
+
+  # ----------------------------------------------------------------
+  # .NET 9 Backend API
+  # ----------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: src/Billing.API/Dockerfile
+    container_name: billing-api
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__DefaultConnection: "Server=db;Database=BillingSystem;User Id=sa;Password=${DB_SA_PASSWORD:-YourStrong!Passw0rd};TrustServerCertificate=True;MultipleActiveResultSets=true;"
+      Cache__ConnectionString: "redis:6379"
+      Cache__InstanceName: "billing"
+      Jwt__Issuer: "BillingSystem"
+      Jwt__Audience: "BillingSystemClients"
+      Jwt__SecretKey: "${JWT_SECRET_KEY:-SuperSecretKey_Change_In_Production_At_Least_32_Characters_Long_2026!}"
+      Jwt__AccessTokenMinutes: "15"
+      Jwt__RefreshTokenDays: "7"
+      Cors__AllowedOrigins__0: "http://localhost:${FRONTEND_PORT:-8081}"
+      Cors__AllowedOrigins__1: "http://localhost:5173"
+    ports:
+      - "${API_PORT:-5000}:8080"
+    volumes:
+      - api-logs:/app/logs
+    networks:
+      - billing-network
+    restart: unless-stopped
+
+  # ----------------------------------------------------------------
+  # React Frontend (nginx serving static build)
+  # ----------------------------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: billing-frontend
+    depends_on:
+      - api
+    ports:
+      - "${FRONTEND_PORT:-8081}:80"
+    networks:
+      - billing-network
+    restart: unless-stopped
+
+# ==============================================================================
+# Named volumes for persistent data
+# ==============================================================================
+volumes:
+  db-data:
+    name: billing-db-data
+  redis-data:
+    name: billing-redis-data
+  api-logs:
+    name: billing-api-logs
+
+# ==============================================================================
+# Network
+# ==============================================================================
+networks:
+  billing-network:
+    driver: bridge
+    name: billing-network

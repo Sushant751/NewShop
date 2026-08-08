@@ -1,0 +1,15 @@
+d:\Projects\ERP\NewShop\src\Billing.Domain\bin\Debug\net9.0\Billing.Domain.deps.json
+d:\Projects\ERP\NewShop\src\Billing.Domain\bin\Debug\net9.0\Billing.Domain.dll
+d:\Projects\ERP\NewShop\src\Billing.Domain\bin\Debug\net9.0\Billing.Domain.pdb
+d:\Projects\ERP\NewShop\src\Billing.Domain\bin\Debug\net9.0\Billing.Shared.dll
+d:\Projects\ERP\NewShop\src\Billing.Domain\bin\Debug\net9.0\Billing.Shared.pdb
+d:\Projects\ERP\NewShop\src\Billing.Domain\obj\Debug\net9.0\Billing.Domain.csproj.AssemblyReference.cache
+d:\Projects\ERP\NewShop\src\Billing.Domain\obj\Debug\net9.0\Billing.Domain.GeneratedMSBuildEditorConfig.editorconfig
+d:\Projects\ERP\NewShop\src\Billing.Domain\obj\Debug\net9.0\Billing.Domain.AssemblyInfoInputs.cache
+d:\Projects\ERP\NewShop\src\Billing.Domain\obj\Debug\net9.0\Billing.Domain.AssemblyInfo.cs
+d:\Projects\ERP\NewShop\src\Billing.Domain\obj\Debug\net9.0\Billing.Domain.csproj.CoreCompileInputs.cache
+d:\Projects\ERP\NewShop\src\Billing.Domain\obj\Debug\net9.0\Billing..1F2CBF9C.Up2Date
+d:\Projects\ERP\NewShop\src\Billing.Domain\obj\Debug\net9.0\Billing.Domain.dll
+d:\Projects\ERP\NewShop\src\Billing.Domain\obj\Debug\net9.0\refint\Billing.Domain.dll
+d:\Projects\ERP\NewShop\src\Billing.Domain\obj\Debug\net9.0\Billing.Domain.pdb
+d:\Projects\ERP\NewShop\src\Billing.Domain\obj\Debug\net9.0\ref\Billing.Domain.dll

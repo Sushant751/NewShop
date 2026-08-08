@@ -1,0 +1,75 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.0.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Billing.Shared", "src\Billing.Shared\Billing.Shared.csproj", "{A1A1A1A1-1111-1111-1111-111111111101}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Billing.Domain", "src\Billing.Domain\Billing.Domain.csproj", "{A1A1A1A1-1111-1111-1111-111111111102}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Billing.Contracts", "src\Billing.Contracts\Billing.Contracts.csproj", "{A1A1A1A1-1111-1111-1111-111111111103}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Billing.Persistence", "src\Billing.Persistence\Billing.Persistence.csproj", "{A1A1A1A1-1111-1111-1111-111111111104}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Billing.Infrastructure", "src\Billing.Infrastructure\Billing.Infrastructure.csproj", "{A1A1A1A1-1111-1111-1111-111111111105}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Billing.Application", "src\Billing.Application\Billing.Application.csproj", "{A1A1A1A1-1111-1111-1111-111111111106}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Billing.Identity", "src\Billing.Identity\Billing.Identity.csproj", "{A1A1A1A1-1111-1111-1111-111111111107}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Billing.API", "src\Billing.API\Billing.API.csproj", "{A1A1A1A1-1111-1111-1111-111111111108}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Billing.UnitTests", "tests\Billing.UnitTests\Billing.UnitTests.csproj", "{A1A1A1A1-1111-1111-1111-111111111109}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Billing.IntegrationTests", "tests\Billing.IntegrationTests\Billing.IntegrationTests.csproj", "{A1A1A1A1-1111-1111-1111-111111111110}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A1A1A1A1-1111-1111-1111-111111111101}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111101}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111101}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111101}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111102}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111102}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111102}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111102}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111103}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111103}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111103}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111103}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111104}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111104}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111104}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111104}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111105}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111105}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111105}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111105}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111106}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111106}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111106}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111106}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111107}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111107}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111107}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111107}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111108}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111108}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111108}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111108}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111109}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111109}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111109}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111109}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111110}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111110}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111110}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1A1A1A1-1111-1111-1111-111111111110}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
