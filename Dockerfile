@@ -3,7 +3,8 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /app
 
 # Copy solution and project files for layer caching
-COPY Billing.sln ./
+COPY BillingSystem.sln ./
+COPY Directory.Build.props ./
 COPY src/Billing.API/Billing.API.csproj src/Billing.API/
 COPY src/Billing.Application/Billing.Application.csproj src/Billing.Application/
 COPY src/Billing.Contracts/Billing.Contracts.csproj src/Billing.Contracts/
