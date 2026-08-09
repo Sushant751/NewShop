@@ -91,7 +91,7 @@ export default function StaffPage() {
             field: 'role', 
             headerName: 'Role', 
             width: 150,
-            valueGetter: (value: any, row: any) => row?.roles?.[0] || 'Unknown',
+            valueGetter: (_: any, row: any) => row?.roles?.[0] || 'Unknown',
             renderCell: (params: any) => (
                 <Chip label={params.value} size="small" color="primary" variant="outlined" />
             )
