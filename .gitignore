@@ -35,3 +35,7 @@ Thumbs.db
 TestResults/
 [Cc]overage/
 *.opencover.xml
+
+## Scratch Directory
+scratch/
+

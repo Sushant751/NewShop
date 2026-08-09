@@ -17,7 +17,6 @@ namespace Billing.API.Controllers;
 public class DashboardController : BaseApiController
 {
     [HttpGet]
-    [Authorize(Policy = nameof(Permissions.ReportsView))]
     [SwaggerOperation(Summary = "Get the dashboard summary (sales, purchases, profit, counts, top products, daily sales).")]
     [ProducesResponseType(typeof(Result<DashboardDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetDashboard(
