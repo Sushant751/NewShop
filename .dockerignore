@@ -1,59 +1,10 @@
-# ==============================================================================
-# .dockerignore — Files/dirs excluded from Docker build context
-# Reduces build context size and speeds up builds
-# ==============================================================================
-
-# Version control
-.git
-.gitignore
-.gitattributes
-
-# IDE / editor files
-.vs
-.vscode
-.idea
-*.user
-*.suo
-*.userosscache
-*.sln.docstates
-
-# Build outputs
-**/bin/
-**/obj/
-**/dist/
-frontend/node_modules/
-frontend/dist/
-
-# Test results
-**/TestResults/
-**/[Tt]est[Rr]esult*/
-
-# Logs
-**/logs/
-*.log
-
-# NuGet
-**/.nuget/
-*.nupkg
-*.snupkg
-
-# OS files
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-.DS_Store
-
-# Documentation
+**/.git
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/node_modules
+**/dist
+frontend/
+tests/
 *.md
-docs/
-LICENSE
-
-# Docker files themselves (not needed in context)
-Dockerfile*
-docker-compose*
-.dockerignore
-
-# Environment files (secrets should not be baked into images)
-.env
-.env.*
-!.env.example

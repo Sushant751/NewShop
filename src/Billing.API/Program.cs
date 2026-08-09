@@ -89,13 +89,11 @@ try
     });
 
     // ── CORS for the React SPA ──
-    var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-        ?? new[] { "http://localhost:5173", "http://localhost:3000" };
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("BillingCors", policy =>
         {
-            policy.WithOrigins(corsOrigins)
+            policy.SetIsOriginAllowed(_ => true)
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 .AllowCredentials();
