@@ -49,7 +49,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
 import { dashboardApi } from '../api/endpoints';
 import type { DashboardDto, ShopMetricsDto } from '../types';
-import { formatCurrency } from '../utils/helpers';
+import { formatCurrency, getErrorMessage } from '../utils/helpers';
 import { useAppSelector, RootState } from '../store';
 import { Roles } from '../types';
 
@@ -193,7 +193,7 @@ function DashboardPage() {
     if (error) {
         return (
             <Alert severity="error" sx={{ my: 2 }}>
-                Failed to load dashboard data. Please try again.
+                {getErrorMessage(error, 'Failed to load dashboard data. Please try again.')}
             </Alert>
         );
     }

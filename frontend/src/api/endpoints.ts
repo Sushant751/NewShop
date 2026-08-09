@@ -197,6 +197,8 @@ export const purchasesApi = {
 export const dashboardApi = {
     get: (params: { from?: string; to?: string }) =>
         unwrap<DashboardDto>(apiClient.get('/dashboard', { params })),
+    getSummary: (from?: string, to?: string) =>
+        unwrap<DashboardDto>(apiClient.get('/dashboard', { params: { from, to } })),
 };
 
 // ============================================================================
