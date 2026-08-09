@@ -360,6 +360,23 @@ export interface DailySalesDto {
     salesCount: number;
 }
 
+export interface ShopMetricsDto {
+    tenantId: string;
+    tenantName: string;
+    tenantSlug: string;
+    plan: string | null;
+    status: string;
+    userCount: number;
+    productCount: number;
+    totalBillsGenerated: number;
+    paidBillsCount: number;
+    cancelledBillsCount: number;
+    totalRevenue: number;
+    cancelledAmount: number;
+    outstandingAmount: number;
+    createdDate: string;
+}
+
 export interface DashboardDto {
     totalSales: number;
     totalPurchases: number;
@@ -371,6 +388,11 @@ export interface DashboardDto {
     lowStockCount: number;
     topProducts: TopProductDto[];
     dailySales: DailySalesDto[];
+    totalShopsCount?: number;
+    totalUsersCount?: number;
+    totalCancelledBillsCount?: number;
+    totalCancelledAmount?: number;
+    shopMetrics?: ShopMetricsDto[];
 }
 
 // ============================================================================

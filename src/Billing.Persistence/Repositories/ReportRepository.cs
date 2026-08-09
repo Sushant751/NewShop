@@ -57,7 +57,11 @@ public sealed class ReportRepository : IReportRepository
                 ISNULL((SELECT COUNT(*) FROM Sales WHERE IsDeleted = 0 AND Status = 3 AND SaleDate >= @From AND SaleDate < @To), 0) AS SalesCount,
                 ISNULL((SELECT COUNT(*) FROM Products WHERE IsDeleted = 0), 0) AS ProductCount,
                 ISNULL((SELECT COUNT(*) FROM Customers WHERE IsDeleted = 0), 0) AS CustomerCount,
-                ISNULL((SELECT COUNT(*) FROM Products WHERE IsDeleted = 0 AND IsActive = 1 AND CurrentStock <= ReorderLevel), 0) AS LowStockCount;"
+                ISNULL((SELECT COUNT(*) FROM Products WHERE IsDeleted = 0 AND IsActive = 1 AND CurrentStock <= ReorderLevel), 0) AS LowStockCount,
+                ISNULL((SELECT COUNT(*) FROM Tenants WHERE IsDeleted = 0), 0) AS TotalShopsCount,
+                ISNULL((SELECT COUNT(*) FROM Users WHERE IsDeleted = 0), 0) AS TotalUsersCount,
+                ISNULL((SELECT COUNT(*) FROM Sales WHERE IsDeleted = 0 AND Status = 4 AND SaleDate >= @From AND SaleDate < @To), 0) AS TotalCancelledBillsCount,
+                ISNULL((SELECT SUM(GrandTotal) FROM Sales WHERE IsDeleted = 0 AND Status = 4 AND SaleDate >= @From AND SaleDate < @To), 0) AS TotalCancelledAmount;"
             : @"
             SELECT
                 -- Total Revenue: sum of all completed sale grand totals
@@ -349,6 +353,39 @@ public sealed class ReportRepository : IReportRepository
             connection.Open();
         var result = await connection.QueryAsync<InventoryValuationRow>(
             new CommandDefinition(sql, new { TenantId = tenantId }, cancellationToken: cancellationToken));
+        return result.AsList();
+    }
+
+    public async Task<IReadOnlyList<ShopMetricsRow>> GetShopMetricsAsync(DateTime from, DateTime to, CancellationToken cancellationToken = default)
+    {
+        const string sql = @"
+            SELECT
+                t.Id AS TenantId,
+                t.Name AS TenantName,
+                t.Slug AS TenantSlug,
+                t.Plan,
+                CASE t.Status WHEN 1 THEN 'Active' WHEN 2 THEN 'Suspended' ELSE 'Inactive' END AS Status,
+                ISNULL((SELECT COUNT(1) FROM Users u WHERE u.TenantId = t.Id AND u.IsDeleted = 0), 0) AS UserCount,
+                ISNULL((SELECT COUNT(1) FROM Products p WHERE p.TenantId = t.Id AND p.IsDeleted = 0), 0) AS ProductCount,
+                ISNULL((SELECT COUNT(1) FROM Sales s WHERE s.TenantId = t.Id AND s.IsDeleted = 0 AND s.SaleDate >= @From AND s.SaleDate < @To), 0) AS TotalBillsGenerated,
+                ISNULL((SELECT COUNT(1) FROM Sales s WHERE s.TenantId = t.Id AND s.IsDeleted = 0 AND s.Status = 3 AND s.SaleDate >= @From AND s.SaleDate < @To), 0) AS PaidBillsCount,
+                ISNULL((SELECT COUNT(1) FROM Sales s WHERE s.TenantId = t.Id AND s.IsDeleted = 0 AND s.Status = 4 AND s.SaleDate >= @From AND s.SaleDate < @To), 0) AS CancelledBillsCount,
+                ISNULL((SELECT SUM(GrandTotal) FROM Sales s WHERE s.TenantId = t.Id AND s.IsDeleted = 0 AND s.Status = 3 AND s.SaleDate >= @From AND s.SaleDate < @To), 0) AS TotalRevenue,
+                ISNULL((SELECT SUM(GrandTotal) FROM Sales s WHERE s.TenantId = t.Id AND s.IsDeleted = 0 AND s.Status = 4 AND s.SaleDate >= @From AND s.SaleDate < @To), 0) AS CancelledAmount,
+                ISNULL((SELECT SUM(BalanceDue) FROM Sales s WHERE s.TenantId = t.Id AND s.IsDeleted = 0 AND s.Status = 3 AND s.SaleDate >= @From AND s.SaleDate < @To), 0) AS OutstandingAmount,
+                t.CreatedDate
+            FROM Tenants t
+            WHERE t.IsDeleted = 0
+            ORDER BY TotalRevenue DESC, TotalBillsGenerated DESC;";
+
+        using var connection = _factory.CreateConnection();
+        if (connection is System.Data.Common.DbConnection dbConn)
+            await dbConn.OpenAsync(cancellationToken);
+        else
+            connection.Open();
+
+        var result = await connection.QueryAsync<ShopMetricsRow>(
+            new CommandDefinition(sql, new { From = from, To = to }, cancellationToken: cancellationToken));
         return result.AsList();
     }
 }

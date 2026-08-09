@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from 'react-query';
+import { useNavigate } from 'react-router-dom';
 import {
     Box,
     Card,
@@ -18,6 +19,8 @@ import {
     TextField,
     Chip,
     Button,
+    IconButton,
+    Tooltip,
 } from '@mui/material';
 import {
     BarChart,
@@ -29,18 +32,23 @@ import {
     ResponsiveContainer,
     AreaChart,
     Area,
+    Legend,
 } from 'recharts';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCartOutlined';
 import InventoryIcon from '@mui/icons-material/Inventory2Outlined';
 import PeopleIcon from '@mui/icons-material/PeopleOutline';
-import WarningIcon from '@mui/icons-material/WarningAmberOutlined';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import DownloadIcon from '@mui/icons-material/DownloadOutlined';
+import StorefrontIcon from '@mui/icons-material/Storefront';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
 import { dashboardApi } from '../api/endpoints';
-import type { DashboardDto } from '../types';
+import type { DashboardDto, ShopMetricsDto } from '../types';
 import { formatCurrency } from '../utils/helpers';
 import { useAppSelector, RootState } from '../store';
 import { Roles } from '../types';
@@ -53,9 +61,10 @@ interface MantisStatCardProps {
     icon: React.ReactNode;
     color: string;
     bgTint: string;
+    subtitle?: string;
 }
 
-function MantisStatCard({ title, value, pctChange, icon, color, bgTint }: MantisStatCardProps) {
+function MantisStatCard({ title, value, pctChange, icon, color, bgTint, subtitle }: MantisStatCardProps) {
     const hasData = pctChange !== null;
     const isPositive = hasData ? pctChange >= 0 : true;
     const trendLabel = hasData
@@ -84,6 +93,11 @@ function MantisStatCard({ title, value, pctChange, icon, color, bgTint }: Mantis
                         <Typography variant="h4" sx={{ fontWeight: 700, color: '#1d2630' }}>
                             {value}
                         </Typography>
+                        {subtitle && (
+                            <Typography variant="caption" sx={{ color: '#8c8c8c', display: 'block', mt: 0.3 }}>
+                                {subtitle}
+                            </Typography>
+                        )}
                     </Box>
                     <Box
                         sx={{
@@ -116,7 +130,9 @@ function MantisStatCard({ title, value, pctChange, icon, color, bgTint }: Mantis
                             }}
                         />
                     ) : (
-                        <Typography variant="caption" sx={{ color: '#8c8c8c', fontStyle: 'italic' }}>No prior period data</Typography>
+                        <Typography variant="caption" sx={{ color: '#8c8c8c', fontStyle: 'italic' }}>
+                            {subtitle ? 'Current Period' : 'No prior period data'}
+                        </Typography>
                     )}
                     {hasData && (
                         <Typography variant="caption" sx={{ color: '#8c8c8c' }}>vs last period</Typography>
@@ -134,6 +150,7 @@ function pctDiff(current: number, previous: number): number | null {
 }
 
 function DashboardPage() {
+    const navigate = useNavigate();
     const currentUser = useAppSelector((state: RootState) => state.auth.user);
     const isGlobalAdmin = currentUser?.roles?.includes(Roles.GlobalAdmin);
 
@@ -146,53 +163,109 @@ function DashboardPage() {
 
     // Previous period: same duration, immediately before the selected range
     const prevFrom = new Date(from);
-    const prevTo = new Date(from); // previous period ends where current starts
+    const prevTo = new Date(from);
     const rangeDays = Math.max(1, Math.round((new Date(to).getTime() - new Date(from).getTime()) / 86400000));
     prevFrom.setDate(prevFrom.getDate() - rangeDays);
+
     const prevFromStr = prevFrom.toISOString().split('T')[0];
     const prevToStr = prevTo.toISOString().split('T')[0];
 
     const { data, isLoading, error } = useQuery<DashboardDto>(
-        ['dashboard', from, to],
-        () => dashboardApi.get({ from, to }),
-        { enabled: !!from && !!to },
+        ['dashboard', from, to, isGlobalAdmin ? 'global' : currentUser?.tenantId],
+        () => dashboardApi.getSummary(from, to),
+        { keepPreviousData: true },
     );
 
-    // Fetch previous period silently (no loading spinner)
     const { data: prevData } = useQuery<DashboardDto>(
-        ['dashboard', prevFromStr, prevToStr],
-        () => dashboardApi.get({ from: prevFromStr, to: prevToStr }),
-        { enabled: !!from && !!to },
+        ['dashboard-prev', prevFromStr, prevToStr, isGlobalAdmin ? 'global' : currentUser?.tenantId],
+        () => dashboardApi.getSummary(prevFromStr, prevToStr),
+        { keepPreviousData: true },
     );
 
     if (isLoading) {
         return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-                <CircularProgress sx={{ color: '#4680ff' }} />
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+                <CircularProgress />
             </Box>
         );
     }
 
     if (error) {
         return (
-            <Alert severity="error" sx={{ mt: 2, borderRadius: 2 }}>
-                {error instanceof Error ? error.message : 'Failed to load dashboard metrics'}
+            <Alert severity="error" sx={{ my: 2 }}>
+                Failed to load dashboard data. Please try again.
             </Alert>
         );
     }
 
-    const dailySalesData =
-        data?.dailySales?.map((d) => ({
-            date: new Date(d.date).toLocaleDateString('en-US', { day: '2-digit', month: 'short' }),
-            sales: d.totalSales,
-            count: d.salesCount,
-        })) || [];
+    const dailySalesData = (data?.dailySales || []).map((item) => ({
+        date: new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+        sales: item.totalSales,
+        orders: item.salesCount,
+    }));
 
     const topProductsData = data?.topProducts || [];
+    const shopMetrics: ShopMetricsDto[] = data?.shopMetrics || [];
+
+    const shopRevenueChartData = shopMetrics.map((shop) => ({
+        name: shop.tenantName,
+        revenue: shop.totalRevenue,
+        bills: shop.totalBillsGenerated,
+        paidBills: shop.paidBillsCount,
+        cancelledBills: shop.cancelledBillsCount,
+    }));
+
+    const handleExportCsv = () => {
+        if (!data) return;
+
+        if (isGlobalAdmin && shopMetrics.length > 0) {
+            // Export Shop-wise breakdown for Global Admin
+            const headers = ['Shop Name', 'Slug', 'Plan', 'Status', 'Staff Count', 'Products Count', 'Bills Generated', 'Paid Bills', 'Cancelled Bills', 'Total Revenue (INR)', 'Cancelled Amount (INR)', 'Outstanding Due (INR)'];
+            const rows = shopMetrics.map((s) => [
+                `"${s.tenantName}"`,
+                s.tenantSlug,
+                s.plan || 'Standard',
+                s.status,
+                s.userCount,
+                s.productCount,
+                s.totalBillsGenerated,
+                s.paidBillsCount,
+                s.cancelledBillsCount,
+                s.totalRevenue.toFixed(2),
+                s.cancelledAmount.toFixed(2),
+                s.outstandingAmount.toFixed(2),
+            ]);
+            const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Shop_Performance_Report_${from}_to_${to}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            return;
+        }
+
+        // Export Daily Sales for Shop Admin
+        const headers = ['Date', 'Sales Count', 'Total Revenue'];
+        const rows = (data.dailySales || []).map((d) => [
+            d.date.split('T')[0],
+            d.salesCount,
+            d.totalSales.toFixed(2),
+        ]);
+        const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Sales_Summary_${from}_to_${to}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
 
     return (
-        <Box>
-            {/* Mantis Header Row */}
+        <Box sx={{ p: { xs: 2, md: 3 } }}>
+            {/* Header with Title & Date Controls */}
             <Box
                 sx={{
                     display: 'flex',
@@ -200,278 +273,599 @@ function DashboardPage() {
                     justifyContent: 'space-between',
                     alignItems: { xs: 'flex-start', sm: 'center' },
                     gap: 2,
-                    mb: 3.5,
+                    mb: 3,
                 }}
             >
                 <Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
-                        <Typography variant="h4" sx={{ fontWeight: 700, color: '#1d2630' }}>
-                            Dashboard Analytics
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Typography variant="h5" sx={{ fontWeight: 700, color: '#1d2630' }}>
+                            {isGlobalAdmin ? 'Platform Executive Dashboard' : 'Store Dashboard'}
                         </Typography>
-                        {isGlobalAdmin && (
+                        {isGlobalAdmin ? (
                             <Chip
-                                label="App Admin — All Shops Consolidated"
+                                label="Multi-Shop Network"
                                 size="small"
-                                color="success"
-                                variant="outlined"
-                                sx={{ fontWeight: 700, height: 24, fontSize: '0.75rem' }}
+                                sx={{ bgcolor: '#e8f0ff', color: '#4680ff', fontWeight: 700, fontSize: '0.75rem' }}
+                            />
+                        ) : (
+                            <Chip
+                                label={currentUser?.tenantName || 'Demo Shop'}
+                                size="small"
+                                sx={{ bgcolor: '#f6ffed', color: '#52c41a', fontWeight: 600, fontSize: '0.75rem' }}
                             />
                         )}
                     </Box>
-                    <Typography variant="body2" sx={{ color: '#5b6b79' }}>
+                    <Typography variant="body2" sx={{ color: '#5b6b79', mt: 0.5 }}>
                         {isGlobalAdmin
-                            ? 'Consolidated real-time overview across all registered shops/tenants, sales performance, and platform revenue trends.'
-                            : 'Real-time overview of sales performance, inventory status, and revenue trends.'}
+                            ? 'Consolidated cross-shop metrics, staff allocations, and bill generation & cancellation tracking'
+                            : 'Real-time store performance, revenue metrics, and inventory overview'}
                     </Typography>
                 </Box>
 
-                <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+                {/* Filters & Export */}
+                <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
                     <TextField
                         type="date"
                         label="From"
+                        size="small"
                         value={from}
                         onChange={(e) => setFrom(e.target.value)}
                         InputLabelProps={{ shrink: true }}
-                        sx={{ width: 155 }}
+                        sx={{ bgcolor: '#fff', borderRadius: 1.5, '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
                     />
                     <TextField
                         type="date"
                         label="To"
+                        size="small"
                         value={to}
                         onChange={(e) => setTo(e.target.value)}
                         InputLabelProps={{ shrink: true }}
-                        sx={{ width: 155 }}
+                        sx={{ bgcolor: '#fff', borderRadius: 1.5, '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
                     />
                     <Button
                         variant="outlined"
+                        size="small"
                         startIcon={<DownloadIcon />}
+                        onClick={handleExportCsv}
                         sx={{
+                            borderRadius: 1.5,
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            height: 40,
                             borderColor: '#e6ebf1',
                             color: '#5b6b79',
-                            bgcolor: '#ffffff',
-                            '&:hover': { bgcolor: '#f8fafc', borderColor: '#4680ff' },
+                            bgcolor: '#fff',
+                            '&:hover': { borderColor: '#4680ff', bgcolor: '#f8faff', color: '#4680ff' },
                         }}
                     >
-                        Export
+                        Export CSV
                     </Button>
                 </Box>
             </Box>
 
-            {/* Mantis Stat Cards Grid */}
-            <Grid container spacing={2.5} sx={{ mb: 3.5 }}>
-                <Grid item xs={12} sm={6} md={3}>
-                    <MantisStatCard
-                        title="Total Revenue"
-                        value={formatCurrency(data?.totalSales || 0)}
-                        pctChange={pctDiff(data?.totalSales || 0, prevData?.totalSales || 0)}
-                        icon={<AttachMoneyIcon />}
-                        color="#4680ff"
-                        bgTint="#e8f0ff"
-                    />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                    <MantisStatCard
-                        title="Net Profit"
-                        value={formatCurrency(data?.totalProfit || 0)}
-                        pctChange={pctDiff(data?.totalProfit || 0, prevData?.totalProfit || 0)}
-                        icon={<TrendingUpIcon />}
-                        color="#52c41a"
-                        bgTint="#f6ffed"
-                    />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                    <MantisStatCard
-                        title="Sales Count"
-                        value={String(data?.salesCount || 0)}
-                        pctChange={pctDiff(data?.salesCount || 0, prevData?.salesCount || 0)}
-                        icon={<ShoppingCartIcon />}
-                        color="#faad14"
-                        bgTint="#fffbe6"
-                    />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                    <MantisStatCard
-                        title="Low Stock Warning"
-                        value={String(data?.lowStockCount || 0)}
-                        pctChange={pctDiff(data?.lowStockCount || 0, prevData?.lowStockCount || 0)}
-                        icon={<WarningIcon />}
-                        color="#ff4d4f"
-                        bgTint="#fff2f0"
-                    />
-                </Grid>
+            {/* ========================================================================= */}
+            {/* VIEW A: GLOBAL ADMIN MULTI-SHOP DASHBOARD                                  */}
+            {/* ========================================================================= */}
+            {isGlobalAdmin ? (
+                <>
+                    {/* Row 1: Platform High-Level Summary Stat Cards */}
+                    <Grid container spacing={2.5} sx={{ mb: 3.5 }}>
+                        <Grid item xs={12} sm={6} md={4} lg={2}>
+                            <MantisStatCard
+                                title="Active Shops"
+                                value={String(data?.totalShopsCount || shopMetrics.length || 0)}
+                                pctChange={null}
+                                subtitle="Registered Branches"
+                                icon={<StorefrontIcon />}
+                                color="#4680ff"
+                                bgTint="#e8f0ff"
+                            />
+                        </Grid>
 
-                <Grid item xs={12} sm={6} md={3}>
-                    <MantisStatCard
-                        title="Catalog Products"
-                        value={String(data?.productCount || 0)}
-                        pctChange={pctDiff(data?.productCount || 0, prevData?.productCount || 0)}
-                        icon={<InventoryIcon />}
-                        color="#13c2c2"
-                        bgTint="#e6fffb"
-                    />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                    <MantisStatCard
-                        title="Active Customers"
-                        value={String(data?.customerCount || 0)}
-                        pctChange={pctDiff(data?.customerCount || 0, prevData?.customerCount || 0)}
-                        icon={<PeopleIcon />}
-                        color="#4680ff"
-                        bgTint="#e8f0ff"
-                    />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                    <MantisStatCard
-                        title="Total Purchases"
-                        value={formatCurrency(data?.totalPurchases || 0)}
-                        pctChange={pctDiff(data?.totalPurchases || 0, prevData?.totalPurchases || 0)}
-                        icon={<ShoppingCartIcon />}
-                        color="#13c2c2"
-                        bgTint="#e6fffb"
-                    />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                    <MantisStatCard
-                        title="Operating Expenses"
-                        value={formatCurrency(data?.totalExpenses || 0)}
-                        pctChange={pctDiff(data?.totalExpenses || 0, prevData?.totalExpenses || 0)}
-                        icon={<AttachMoneyIcon />}
-                        color="#ff4d4f"
-                        bgTint="#fff2f0"
-                    />
-                </Grid>
-            </Grid>
+                        <Grid item xs={12} sm={6} md={4} lg={2}>
+                            <MantisStatCard
+                                title="Total Staff"
+                                value={String(data?.totalUsersCount || 0)}
+                                pctChange={null}
+                                subtitle="Across All Shops"
+                                icon={<PeopleIcon />}
+                                color="#13c2c2"
+                                bgTint="#e6fffb"
+                            />
+                        </Grid>
 
-            {/* Charts Section */}
-            <Grid container spacing={2.5} sx={{ mb: 3.5 }}>
-                <Grid item xs={12} md={8}>
-                    <Card sx={{ borderRadius: 2.5, border: '1px solid #e6ebf1', p: 1 }}>
-                        <CardContent>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Grid item xs={12} sm={6} md={4} lg={2.5}>
+                            <MantisStatCard
+                                title="Platform Revenue"
+                                value={formatCurrency(data?.totalSales || 0)}
+                                pctChange={pctDiff(data?.totalSales || 0, prevData?.totalSales || 0)}
+                                subtitle="Gross Sales (GMV)"
+                                icon={<AttachMoneyIcon />}
+                                color="#52c41a"
+                                bgTint="#f6ffed"
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={4} lg={2}>
+                            <MantisStatCard
+                                title="Bills Generated"
+                                value={String(data?.salesCount || 0)}
+                                pctChange={pctDiff(data?.salesCount || 0, prevData?.salesCount || 0)}
+                                subtitle="Completed Invoices"
+                                icon={<ReceiptLongIcon />}
+                                color="#722ed1"
+                                bgTint="#f9f0ff"
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={4} lg={2}>
+                            <MantisStatCard
+                                title="Cancelled Bills"
+                                value={String(data?.totalCancelledBillsCount || 0)}
+                                pctChange={null}
+                                subtitle={data?.totalCancelledAmount ? formatCurrency(data.totalCancelledAmount) : '₹0.00'}
+                                icon={<CancelOutlinedIcon />}
+                                color="#ff4d4f"
+                                bgTint="#fff2f0"
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={4} lg={1.5}>
+                            <MantisStatCard
+                                title="Products"
+                                value={String(data?.productCount || 0)}
+                                pctChange={null}
+                                subtitle="Network SKUs"
+                                icon={<InventoryIcon />}
+                                color="#fa8c16"
+                                bgTint="#fff7e6"
+                            />
+                        </Grid>
+                    </Grid>
+
+                    {/* Row 2: Visual Comparison Charts */}
+                    <Grid container spacing={2.5} sx={{ mb: 3.5 }}>
+                        {/* Chart 1: Shop-by-Shop Revenue Comparison */}
+                        <Grid item xs={12} md={7}>
+                            <Card sx={{ borderRadius: 2.5, border: '1px solid #e6ebf1', p: 1 }}>
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                        <Box>
+                                            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                                                Revenue by Shop / Branch
+                                            </Typography>
+                                            <Typography variant="caption" color="textSecondary">
+                                                Total sales revenue (₹) collected per shop
+                                            </Typography>
+                                        </Box>
+                                        <Chip label="Shop Revenue" size="small" sx={{ bgcolor: '#e8f0ff', color: '#4680ff', fontWeight: 600 }} />
+                                    </Box>
+
+                                    <ResponsiveContainer width="100%" height={320}>
+                                        <BarChart data={shopRevenueChartData}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                            <XAxis dataKey="name" fontSize={11} stroke="#8c8c8c" />
+                                            <YAxis fontSize={11} stroke="#8c8c8c" />
+                                            <RechartsTooltip
+                                                formatter={(value: any) => formatCurrency(Number(value))}
+                                                contentStyle={{
+                                                    backgroundColor: '#ffffff',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #e6ebf1',
+                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                                }}
+                                            />
+                                            <Bar dataKey="revenue" fill="#4680ff" radius={[6, 6, 0, 0]} name="Revenue (₹)" />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+
+                        {/* Chart 2: Bills Generated vs Cancelled per Shop */}
+                        <Grid item xs={12} md={5}>
+                            <Card sx={{ borderRadius: 2.5, border: '1px solid #e6ebf1', p: 1 }}>
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                        <Box>
+                                            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                                                Bill Status by Shop
+                                            </Typography>
+                                            <Typography variant="caption" color="textSecondary">
+                                                Completed vs Cancelled Invoices
+                                            </Typography>
+                                        </Box>
+                                        <Chip label="Bill Ratio" size="small" sx={{ bgcolor: '#f6ffed', color: '#52c41a', fontWeight: 600 }} />
+                                    </Box>
+
+                                    <ResponsiveContainer width="100%" height={320}>
+                                        <BarChart data={shopRevenueChartData}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                            <XAxis dataKey="name" fontSize={11} stroke="#8c8c8c" />
+                                            <YAxis fontSize={11} stroke="#8c8c8c" />
+                                            <RechartsTooltip
+                                                contentStyle={{
+                                                    backgroundColor: '#ffffff',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #e6ebf1',
+                                                }}
+                                            />
+                                            <Legend />
+                                            <Bar dataKey="paidBills" fill="#52c41a" stackId="a" name="Completed Bills" />
+                                            <Bar dataKey="cancelledBills" fill="#ff4d4f" stackId="a" name="Cancelled Bills" radius={[6, 6, 0, 0]} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    </Grid>
+
+                    {/* Row 3: Comprehensive Shop-Wise Operations Breakdown Table */}
+                    <Card sx={{ borderRadius: 2.5, border: '1px solid #e6ebf1' }}>
+                        <CardContent sx={{ p: 3 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
                                 <Box>
                                     <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                                        Revenue Overview
+                                        Shop-Wise Operations & Performance Matrix
                                     </Typography>
-                                    <Typography variant="caption" color="textSecondary">
-                                        Daily sales revenue trend (₹) over selected timeframe
+                                    <Typography variant="body2" color="textSecondary">
+                                        Staff allocation, bill volumes, cancellation rates, and revenue breakdown per shop
                                     </Typography>
                                 </Box>
-                                <Chip label="Daily Trend" size="small" sx={{ bgcolor: '#e8f0ff', color: '#4680ff', fontWeight: 600 }} />
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    startIcon={<PeopleIcon />}
+                                    onClick={() => navigate('/staff')}
+                                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                                >
+                                    Manage All Staff
+                                </Button>
                             </Box>
 
-                            <ResponsiveContainer width="100%" height={320}>
-                                <AreaChart data={dailySalesData}>
-                                    <defs>
-                                        <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#4680ff" stopOpacity={0.4} />
-                                            <stop offset="95%" stopColor="#4680ff" stopOpacity={0.0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                    <XAxis dataKey="date" fontSize={11} stroke="#8c8c8c" />
-                                    <YAxis fontSize={11} stroke="#8c8c8c" />
-                                    <RechartsTooltip
-                                        contentStyle={{
-                                            backgroundColor: '#ffffff',
-                                            borderRadius: '8px',
-                                            border: '1px solid #e6ebf1',
-                                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                                        }}
-                                    />
-                                    <Area
-                                        type="monotone"
-                                        dataKey="sales"
-                                        stroke="#4680ff"
-                                        strokeWidth={2.5}
-                                        fillOpacity={1}
-                                        fill="url(#salesGradient)"
-                                        name="Revenue (₹)"
-                                    />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </CardContent>
-                    </Card>
-                </Grid>
-
-                <Grid item xs={12} md={4}>
-                    <Card sx={{ borderRadius: 2.5, border: '1px solid #e6ebf1', p: 1 }}>
-                        <CardContent>
-                            <Box sx={{ mb: 2 }}>
-                                <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                                    Top Product Revenue
-                                </Typography>
-                                <Typography variant="caption" color="textSecondary">
-                                    Highest performing sales inventory
-                                </Typography>
-                            </Box>
-
-                            <ResponsiveContainer width="100%" height={320}>
-                                <BarChart data={topProductsData} layout="vertical">
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                    <XAxis type="number" fontSize={11} stroke="#8c8c8c" />
-                                    <YAxis
-                                        type="category"
-                                        dataKey="productName"
-                                        fontSize={11}
-                                        stroke="#8c8c8c"
-                                        width={90}
-                                    />
-                                    <RechartsTooltip
-                                        contentStyle={{
-                                            backgroundColor: '#ffffff',
-                                            borderRadius: '8px',
-                                            border: '1px solid #e6ebf1',
-                                        }}
-                                    />
-                                    <Bar dataKey="revenue" fill="#4680ff" radius={[0, 6, 6, 0]} name="Revenue (₹)" />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </CardContent>
-                    </Card>
-                </Grid>
-            </Grid>
-
-            {/* Top Products Table - Mantis Style */}
-            {topProductsData.length > 0 && (
-                <Card sx={{ borderRadius: 2.5, border: '1px solid #e6ebf1' }}>
-                    <CardContent sx={{ p: 3 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-                            Top Performing Products Summary
-                        </Typography>
-                        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, borderColor: '#e6ebf1' }}>
-                            <Table>
-                                <TableHead>
-                                    <TableRow sx={{ bgcolor: '#fafafa' }}>
-                                        <TableCell sx={{ fontWeight: 700 }}>Product Name</TableCell>
-                                        <TableCell align="right" sx={{ fontWeight: 700 }}>Quantity Sold</TableCell>
-                                        <TableCell align="right" sx={{ fontWeight: 700 }}>Total Revenue</TableCell>
-                                        <TableCell align="center" sx={{ fontWeight: 700 }}>Performance</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {topProductsData.map((product) => (
-                                        <TableRow key={product.productId} hover>
-                                            <TableCell sx={{ fontWeight: 600, color: '#1d2630' }}>
-                                                {product.productName}
-                                            </TableCell>
-                                            <TableCell align="right" sx={{ fontWeight: 500 }}>{product.quantitySold}</TableCell>
-                                            <TableCell align="right" sx={{ fontWeight: 700, color: '#4680ff' }}>
-                                                {formatCurrency(product.revenue)}
-                                            </TableCell>
-                                            <TableCell align="center">
-                                                <Chip
-                                                    label="High Demand"
-                                                    size="small"
-                                                    sx={{ bgcolor: '#f6ffed', color: '#52c41a', fontWeight: 600 }}
-                                                />
-                                            </TableCell>
+                            <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, borderColor: '#e6ebf1' }}>
+                                <Table>
+                                    <TableHead>
+                                        <TableRow sx={{ bgcolor: '#fafafa' }}>
+                                            <TableCell sx={{ fontWeight: 700 }}>Shop / Branch</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 700 }}>Staff Users</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 700 }}>Products</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 700 }}>Total Bills</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 700 }}>Completed Bills</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 700 }}>Cancelled Bills</TableCell>
+                                            <TableCell align="right" sx={{ fontWeight: 700 }}>Total Revenue</TableCell>
+                                            <TableCell align="right" sx={{ fontWeight: 700 }}>Outstanding</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 700 }}>Status</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 700 }}>Action</TableCell>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                    </CardContent>
-                </Card>
+                                    </TableHead>
+                                    <TableBody>
+                                        {shopMetrics.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={10} align="center" sx={{ py: 3, color: '#8c8c8c' }}>
+                                                    No shops registered yet.
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : (
+                                            shopMetrics.map((shop) => (
+                                                <TableRow key={shop.tenantId} hover>
+                                                    <TableCell>
+                                                        <Box>
+                                                            <Typography variant="body2" sx={{ fontWeight: 700, color: '#1d2630' }}>
+                                                                {shop.tenantName}
+                                                            </Typography>
+                                                            <Box sx={{ display: 'flex', gap: 0.8, mt: 0.3, alignItems: 'center' }}>
+                                                                <Typography variant="caption" sx={{ color: '#8c8c8c' }}>
+                                                                    {shop.tenantSlug}
+                                                                </Typography>
+                                                                <Chip
+                                                                    label={shop.plan || 'Standard'}
+                                                                    size="small"
+                                                                    sx={{ height: 18, fontSize: '0.625rem', bgcolor: '#f0f5ff', color: '#2f54eb', fontWeight: 600 }}
+                                                                />
+                                                            </Box>
+                                                        </Box>
+                                                    </TableCell>
+
+                                                    <TableCell align="center">
+                                                        <Chip
+                                                            icon={<PeopleIcon sx={{ fontSize: '14px !important' }} />}
+                                                            label={`${shop.userCount} users`}
+                                                            size="small"
+                                                            sx={{ bgcolor: '#e8f0ff', color: '#4680ff', fontWeight: 600 }}
+                                                        />
+                                                    </TableCell>
+
+                                                    <TableCell align="center" sx={{ fontWeight: 600 }}>
+                                                        {shop.productCount}
+                                                    </TableCell>
+
+                                                    <TableCell align="center" sx={{ fontWeight: 600 }}>
+                                                        {shop.totalBillsGenerated}
+                                                    </TableCell>
+
+                                                    <TableCell align="center">
+                                                        <Chip
+                                                            icon={<CheckCircleOutlineIcon sx={{ fontSize: '14px !important' }} />}
+                                                            label={String(shop.paidBillsCount)}
+                                                            size="small"
+                                                            sx={{ bgcolor: '#f6ffed', color: '#52c41a', fontWeight: 700 }}
+                                                        />
+                                                    </TableCell>
+
+                                                    <TableCell align="center">
+                                                        {shop.cancelledBillsCount > 0 ? (
+                                                            <Chip
+                                                                icon={<CancelOutlinedIcon sx={{ fontSize: '14px !important' }} />}
+                                                                label={`${shop.cancelledBillsCount} (${formatCurrency(shop.cancelledAmount)})`}
+                                                                size="small"
+                                                                sx={{ bgcolor: '#fff2f0', color: '#ff4d4f', fontWeight: 700 }}
+                                                            />
+                                                        ) : (
+                                                            <Typography variant="body2" sx={{ color: '#8c8c8c' }}>0</Typography>
+                                                        )}
+                                                    </TableCell>
+
+                                                    <TableCell align="right" sx={{ fontWeight: 700, color: '#4680ff', fontSize: '0.95rem' }}>
+                                                        {formatCurrency(shop.totalRevenue)}
+                                                    </TableCell>
+
+                                                    <TableCell align="right" sx={{ fontWeight: 600, color: shop.outstandingAmount > 0 ? '#fa8c16' : '#5b6b79' }}>
+                                                        {formatCurrency(shop.outstandingAmount)}
+                                                    </TableCell>
+
+                                                    <TableCell align="center">
+                                                        <Chip
+                                                            label={shop.status}
+                                                            size="small"
+                                                            sx={{
+                                                                bgcolor: shop.status === 'Active' ? '#f6ffed' : '#fff2f0',
+                                                                color: shop.status === 'Active' ? '#52c41a' : '#ff4d4f',
+                                                                fontWeight: 600,
+                                                            }}
+                                                        />
+                                                    </TableCell>
+
+                                                    <TableCell align="center">
+                                                        <Tooltip title="View / Manage Shop Staff">
+                                                            <IconButton
+                                                                size="small"
+                                                                onClick={() => navigate('/staff')}
+                                                                sx={{ color: '#4680ff', '&:hover': { bgcolor: '#e8f0ff' } }}
+                                                            >
+                                                                <OpenInNewIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </CardContent>
+                    </Card>
+                </>
+            ) : (
+                /* ========================================================================= */
+                /* VIEW B: STORE ADMIN & CASHIER OPERATIONAL DASHBOARD                        */
+                /* ========================================================================= */
+                <>
+                    {/* Top Row KPI Cards */}
+                    <Grid container spacing={2.5} sx={{ mb: 3.5 }}>
+                        <Grid item xs={12} sm={6} md={3}>
+                            <MantisStatCard
+                                title="Total Sales Revenue"
+                                value={formatCurrency(data?.totalSales || 0)}
+                                pctChange={pctDiff(data?.totalSales || 0, prevData?.totalSales || 0)}
+                                icon={<AttachMoneyIcon />}
+                                color="#4680ff"
+                                bgTint="#e8f0ff"
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={3}>
+                            <MantisStatCard
+                                title="Total Invoices"
+                                value={String(data?.salesCount || 0)}
+                                pctChange={pctDiff(data?.salesCount || 0, prevData?.salesCount || 0)}
+                                icon={<ReceiptLongIcon />}
+                                color="#52c41a"
+                                bgTint="#f6ffed"
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={3}>
+                            <MantisStatCard
+                                title="Catalog Products"
+                                value={String(data?.productCount || 0)}
+                                pctChange={pctDiff(data?.productCount || 0, prevData?.productCount || 0)}
+                                icon={<InventoryIcon />}
+                                color="#13c2c2"
+                                bgTint="#e6fffb"
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={3}>
+                            <MantisStatCard
+                                title="Active Customers"
+                                value={String(data?.customerCount || 0)}
+                                pctChange={pctDiff(data?.customerCount || 0, prevData?.customerCount || 0)}
+                                icon={<PeopleIcon />}
+                                color="#722ed1"
+                                bgTint="#f9f0ff"
+                            />
+                        </Grid>
+                    </Grid>
+
+                    {/* Secondary Metrics */}
+                    <Grid container spacing={2.5} sx={{ mb: 3.5 }}>
+                        <Grid item xs={12} sm={6} md={4}>
+                            <MantisStatCard
+                                title="Total Purchases"
+                                value={formatCurrency(data?.totalPurchases || 0)}
+                                pctChange={pctDiff(data?.totalPurchases || 0, prevData?.totalPurchases || 0)}
+                                icon={<ShoppingCartIcon />}
+                                color="#fa8c16"
+                                bgTint="#fff7e6"
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={4}>
+                            <MantisStatCard
+                                title="Operating Expenses"
+                                value={formatCurrency(data?.totalExpenses || 0)}
+                                pctChange={pctDiff(data?.totalExpenses || 0, prevData?.totalExpenses || 0)}
+                                icon={<AttachMoneyIcon />}
+                                color="#ff4d4f"
+                                bgTint="#fff2f0"
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={4}>
+                            <MantisStatCard
+                                title="Net Profit"
+                                value={formatCurrency(data?.totalProfit || 0)}
+                                pctChange={pctDiff(data?.totalProfit || 0, prevData?.totalProfit || 0)}
+                                icon={<AccountBalanceWalletIcon />}
+                                color="#52c41a"
+                                bgTint="#f6ffed"
+                            />
+                        </Grid>
+                    </Grid>
+
+                    {/* Charts Section */}
+                    <Grid container spacing={2.5} sx={{ mb: 3.5 }}>
+                        <Grid item xs={12} md={8}>
+                            <Card sx={{ borderRadius: 2.5, border: '1px solid #e6ebf1', p: 1 }}>
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                        <Box>
+                                            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                                                Revenue Overview
+                                            </Typography>
+                                            <Typography variant="caption" color="textSecondary">
+                                                Daily sales revenue trend (₹) over selected timeframe
+                                            </Typography>
+                                        </Box>
+                                        <Chip label="Daily Trend" size="small" sx={{ bgcolor: '#e8f0ff', color: '#4680ff', fontWeight: 600 }} />
+                                    </Box>
+
+                                    <ResponsiveContainer width="100%" height={320}>
+                                        <AreaChart data={dailySalesData}>
+                                            <defs>
+                                                <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#4680ff" stopOpacity={0.4} />
+                                                    <stop offset="95%" stopColor="#4680ff" stopOpacity={0.0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                            <XAxis dataKey="date" fontSize={11} stroke="#8c8c8c" />
+                                            <YAxis fontSize={11} stroke="#8c8c8c" />
+                                            <RechartsTooltip
+                                                contentStyle={{
+                                                    backgroundColor: '#ffffff',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #e6ebf1',
+                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                                }}
+                                            />
+                                            <Area
+                                                type="monotone"
+                                                dataKey="sales"
+                                                stroke="#4680ff"
+                                                strokeWidth={2.5}
+                                                fillOpacity={1}
+                                                fill="url(#salesGradient)"
+                                                name="Revenue (₹)"
+                                            />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+
+                        <Grid item xs={12} md={4}>
+                            <Card sx={{ borderRadius: 2.5, border: '1px solid #e6ebf1', p: 1 }}>
+                                <CardContent>
+                                    <Box sx={{ mb: 2 }}>
+                                        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                                            Top Product Revenue
+                                        </Typography>
+                                        <Typography variant="caption" color="textSecondary">
+                                            Highest performing sales inventory
+                                        </Typography>
+                                    </Box>
+
+                                    <ResponsiveContainer width="100%" height={320}>
+                                        <BarChart data={topProductsData} layout="vertical">
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                            <XAxis type="number" fontSize={11} stroke="#8c8c8c" />
+                                            <YAxis
+                                                type="category"
+                                                dataKey="productName"
+                                                fontSize={11}
+                                                stroke="#8c8c8c"
+                                                width={90}
+                                            />
+                                            <RechartsTooltip
+                                                contentStyle={{
+                                                    backgroundColor: '#ffffff',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #e6ebf1',
+                                                }}
+                                            />
+                                            <Bar dataKey="revenue" fill="#4680ff" radius={[0, 6, 6, 0]} name="Revenue (₹)" />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    </Grid>
+
+                    {/* Top Products Table */}
+                    {topProductsData.length > 0 && (
+                        <Card sx={{ borderRadius: 2.5, border: '1px solid #e6ebf1' }}>
+                            <CardContent sx={{ p: 3 }}>
+                                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+                                    Top Performing Products Summary
+                                </Typography>
+                                <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, borderColor: '#e6ebf1' }}>
+                                    <Table>
+                                        <TableHead>
+                                            <TableRow sx={{ bgcolor: '#fafafa' }}>
+                                                <TableCell sx={{ fontWeight: 700 }}>Product Name</TableCell>
+                                                <TableCell align="right" sx={{ fontWeight: 700 }}>Quantity Sold</TableCell>
+                                                <TableCell align="right" sx={{ fontWeight: 700 }}>Total Revenue</TableCell>
+                                                <TableCell align="center" sx={{ fontWeight: 700 }}>Performance</TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {topProductsData.map((product) => (
+                                                <TableRow key={product.productId} hover>
+                                                    <TableCell sx={{ fontWeight: 600, color: '#1d2630' }}>
+                                                        {product.productName}
+                                                    </TableCell>
+                                                    <TableCell align="right" sx={{ fontWeight: 500 }}>{product.quantitySold}</TableCell>
+                                                    <TableCell align="right" sx={{ fontWeight: 700, color: '#4680ff' }}>
+                                                        {formatCurrency(product.revenue)}
+                                                    </TableCell>
+                                                    <TableCell align="center">
+                                                        <Chip
+                                                            label="High Demand"
+                                                            size="small"
+                                                            sx={{ bgcolor: '#f6ffed', color: '#52c41a', fontWeight: 600 }}
+                                                        />
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            </CardContent>
+                        </Card>
+                    )}
+                </>
             )}
         </Box>
     );

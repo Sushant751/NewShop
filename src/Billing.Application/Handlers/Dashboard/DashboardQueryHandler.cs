@@ -38,11 +38,27 @@ public sealed class GetDashboardHandler : IRequestHandler<GetDashboardQuery, Res
         var topProducts = await _reportRepository.GetTopProductsAsync(from, to, 10, request.IsGlobalAdmin, cancellationToken);
         var dailySales = await _reportRepository.GetDailySalesAsync(from, to, request.IsGlobalAdmin, cancellationToken);
 
+        IReadOnlyList<ShopMetricsDto>? shopMetrics = null;
+        if (request.IsGlobalAdmin)
+        {
+            var shopRows = await _reportRepository.GetShopMetricsAsync(from, to, cancellationToken);
+            shopMetrics = shopRows.Select(s => new ShopMetricsDto(
+                s.TenantId, s.TenantName, s.TenantSlug, s.Plan, s.Status,
+                s.UserCount, s.ProductCount, s.TotalBillsGenerated, s.PaidBillsCount,
+                s.CancelledBillsCount, s.TotalRevenue, s.CancelledAmount,
+                s.OutstandingAmount, s.CreatedDate)).ToList();
+        }
+
         var dto = new DashboardDto(
             summary.TotalSales, summary.TotalPurchases, summary.TotalExpenses, summary.TotalProfit,
             summary.SalesCount, summary.ProductCount, summary.CustomerCount, summary.LowStockCount,
             topProducts.Select(t => new TopProductDto(t.ProductId, t.ProductName, t.QuantitySold, t.Revenue)).ToList(),
-            dailySales.Select(d => new DailySalesDto(d.Date, d.TotalSales, d.SalesCount)).ToList());
+            dailySales.Select(d => new DailySalesDto(d.Date, d.TotalSales, d.SalesCount)).ToList(),
+            summary.TotalShopsCount,
+            summary.TotalUsersCount,
+            summary.TotalCancelledBillsCount,
+            summary.TotalCancelledAmount,
+            shopMetrics);
 
         await _cache.SetAsync(cacheKey, dto, TimeSpan.FromMinutes(2), cancellationToken);
         return Result<DashboardDto>.Ok(dto);

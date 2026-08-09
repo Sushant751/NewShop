@@ -64,10 +64,28 @@ public sealed record CreateExpenseRequest(
     string Title, Guid? CategoryId, decimal Amount, DateTime ExpenseDate,
     PaymentMethod PaymentMethod, string? Reference, string? Notes);
 
+public sealed record ShopMetricsDto(
+    Guid TenantId,
+    string TenantName,
+    string TenantSlug,
+    string? Plan,
+    string Status,
+    int UserCount,
+    int ProductCount,
+    int TotalBillsGenerated,
+    int PaidBillsCount,
+    int CancelledBillsCount,
+    decimal TotalRevenue,
+    decimal CancelledAmount,
+    decimal OutstandingAmount,
+    DateTime CreatedDate);
+
 public sealed record DashboardDto(
     decimal TotalSales, decimal TotalPurchases, decimal TotalExpenses,
     decimal TotalProfit, int SalesCount, int ProductCount, int CustomerCount,
-    int LowStockCount, IReadOnlyList<TopProductDto> TopProducts, IReadOnlyList<DailySalesDto> DailySales);
+    int LowStockCount, IReadOnlyList<TopProductDto> TopProducts, IReadOnlyList<DailySalesDto> DailySales,
+    int TotalShopsCount = 0, int TotalUsersCount = 0, int TotalCancelledBillsCount = 0,
+    decimal TotalCancelledAmount = 0, IReadOnlyList<ShopMetricsDto>? ShopMetrics = null);
 
 public sealed record TopProductDto(Guid ProductId, string ProductName, decimal QuantitySold, decimal Revenue);
 public sealed record DailySalesDto(DateTime Date, decimal TotalSales, int SalesCount);

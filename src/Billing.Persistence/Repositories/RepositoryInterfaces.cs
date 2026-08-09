@@ -94,12 +94,20 @@ public interface IReportRepository
     Task<IReadOnlyList<GstRateBreakdownRow>> GetGstReportAsync(DateTime from, DateTime to, bool isGlobalAdmin = false, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<PaymentMethodSummaryRow>> GetPaymentMethodSummaryAsync(DateTime from, DateTime to, bool isGlobalAdmin = false, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<InventoryValuationRow>> GetInventoryValuationAsync(bool isGlobalAdmin = false, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<ShopMetricsRow>> GetShopMetricsAsync(DateTime from, DateTime to, CancellationToken cancellationToken = default);
 }
 
 public sealed record DashboardSummary(
     decimal TotalSales, decimal TotalPurchases, decimal TotalExpenses,
     decimal TotalProfit, int SalesCount, int ProductCount, int CustomerCount,
-    int LowStockCount);
+    int LowStockCount, int TotalShopsCount = 0, int TotalUsersCount = 0,
+    int TotalCancelledBillsCount = 0, decimal TotalCancelledAmount = 0);
+
+public sealed record ShopMetricsRow(
+    Guid TenantId, string TenantName, string TenantSlug, string? Plan, string Status,
+    int UserCount, int ProductCount, int TotalBillsGenerated, int PaidBillsCount,
+    int CancelledBillsCount, decimal TotalRevenue, decimal CancelledAmount,
+    decimal OutstandingAmount, DateTime CreatedDate);
 
 public sealed record TopProductRow(Guid ProductId, string ProductName, decimal QuantitySold, decimal Revenue);
 public sealed record DailySalesRow(DateTime Date, decimal TotalSales, int SalesCount);
