@@ -78,7 +78,7 @@ function LoginPage() {
                         <StorefrontIcon sx={{ fontSize: 36 }} />
                     </Box>
                     <Typography variant="h4" sx={{ fontWeight: 700, color: '#1d2630', mb: 0.5 }}>
-                        Mantis Billing
+                        Easy Billing
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
                         Multi-Tenant POS & Enterprise Inventory SaaS
