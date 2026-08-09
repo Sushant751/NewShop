@@ -121,7 +121,7 @@ public sealed class CreatePurchaseHandler : IRequestHandler<CreatePurchaseComman
             var purchase = new Domain.Entities.Purchase
             {
                 PurchaseNumber = purchaseNumber,
-                ShopId = request.Purchase.ShopId,
+                ShopId = request.Purchase.ShopId == Guid.Empty ? null : request.Purchase.ShopId,
                 SupplierId = request.Purchase.SupplierId,
                 PurchaseDate = DateTime.UtcNow,
                 Status = PurchaseStatus.Received,

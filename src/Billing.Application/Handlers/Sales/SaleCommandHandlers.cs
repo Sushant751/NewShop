@@ -55,8 +55,8 @@ public sealed class CreateSaleHandler : IRequestHandler<CreateSaleCommand, Resul
             var sale = new Domain.Entities.Sale
             {
                 InvoiceNumber = invoiceNumber,
-                ShopId = request.Sale.ShopId,
-                CustomerId = request.Sale.CustomerId,
+                ShopId = request.Sale.ShopId == Guid.Empty ? null : request.Sale.ShopId,
+                CustomerId = request.Sale.CustomerId == Guid.Empty ? null : request.Sale.CustomerId,
                 CashierId = _currentUser.UserId.Value,
                 SaleDate = DateTime.UtcNow,
                 Status = SaleStatus.Completed,
