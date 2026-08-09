@@ -363,7 +363,7 @@ public sealed class ReportRepository : IReportRepository
                 t.Id AS TenantId,
                 t.Name AS TenantName,
                 t.Slug AS TenantSlug,
-                t.Plan,
+                ISNULL((SELECT TOP 1 p.Name FROM dbo.Plans p WHERE p.Id = t.PlanId), 'Standard') AS [Plan],
                 CASE t.Status WHEN 1 THEN 'Active' WHEN 2 THEN 'Suspended' ELSE 'Inactive' END AS Status,
                 ISNULL((SELECT COUNT(1) FROM Users u WHERE u.TenantId = t.Id AND u.IsDeleted = 0), 0) AS UserCount,
                 ISNULL((SELECT COUNT(1) FROM Products p WHERE p.TenantId = t.Id AND p.IsDeleted = 0), 0) AS ProductCount,

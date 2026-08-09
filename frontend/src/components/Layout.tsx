@@ -60,7 +60,7 @@ interface NavItem {
     badge?: string;
 }
 
-// Global Admin: Dedicated administrative suite — only staff management, system analytics, and platform settings.
+// Global Admin: Dedicated administrative suite — only staff & shop management, executive analytics, and platform settings.
 const globalAdminNavGroups: NavGroup[] = [
     {
         category: 'PLATFORM MANAGEMENT',
@@ -70,9 +70,8 @@ const globalAdminNavGroups: NavGroup[] = [
         ],
     },
     {
-        category: 'SYSTEM & ANALYTICS',
+        category: 'SYSTEM & SETTINGS',
         items: [
-            { label: 'Platform Reports', path: '/reports', icon: <AssessmentIcon /> },
             { label: 'Settings', path: '/settings', icon: <SettingsIcon /> },
         ],
     },
