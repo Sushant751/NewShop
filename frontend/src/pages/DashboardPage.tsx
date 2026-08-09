@@ -723,14 +723,16 @@ function DashboardPage() {
                         </Grid>
 
                         <Grid item xs={12} sm={6} md={4}>
-                            <MantisStatCard
-                                title="Net Profit"
-                                value={formatCurrency(data?.totalProfit || 0)}
-                                pctChange={pctDiff(data?.totalProfit || 0, prevData?.totalProfit || 0)}
-                                icon={<AccountBalanceWalletIcon />}
-                                color="#52c41a"
-                                bgTint="#f6ffed"
-                            />
+                            { !isGlobalAdmin && (
+                                <MantisStatCard
+                                    title="Net Profit"
+                                    value={formatCurrency(data?.totalProfit || 0)}
+                                    pctChange={pctDiff(data?.totalProfit || 0, prevData?.totalProfit || 0)}
+                                    icon={<AccountBalanceWalletIcon />}
+                                    color="#52c41a"
+                                    bgTint="#f6ffed"
+                                />
+                            ) }
                         </Grid>
                     </Grid>
 

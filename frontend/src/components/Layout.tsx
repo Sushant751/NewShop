@@ -42,6 +42,8 @@ import { useQueryClient } from 'react-query';
 import { useAppDispatch, useAppSelector } from '../store';
 import { logoutUser } from '../store/slices/authSlice';
 import { Permissions, Roles } from '../types';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
@@ -107,24 +109,32 @@ const shopNavGroups: NavGroup[] = [
 ];
 
 function Layout() {
+// duplicate imports removed - moved to top of file
+
     const [open, setOpen] = useState(true);
-    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-    const navigate = useNavigate();
-    const location = useLocation();
-    const dispatch = useAppDispatch();
-    const user = useAppSelector((state) => state.auth.user);
+    // Responsive drawer handling
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const drawerVariant = isMobile ? 'temporary' : 'persistent';
+    const drawerOpen = isMobile ? open : true;
+    const toggleDrawer = () => setOpen(!open);
 
-    const isGlobalAdmin = user?.roles?.includes(Roles.GlobalAdmin);
-    const activeNavGroups = isGlobalAdmin ? globalAdminNavGroups : shopNavGroups;
-
-    const canAccess = (item: NavItem): boolean => {
-        if (isGlobalAdmin) return true;
-        if (!item.permission) return true;
-        if (user?.roles?.includes(Roles.ShopAdmin)) return true; // Shop admin can manage store staff
-        return user?.permissions?.includes(item.permission) ?? false;
+    const appBarSx = {
+        zIndex: (theme) => theme.zIndex.drawer + 1,
+        transition: (theme) =>
+            theme.transitions.create(['width', 'margin'], {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.leavingScreen,
+            }),
+        marginLeft: !isMobile && drawerOpen ? `${drawerWidth}px` : 0,
+        width: !isMobile && drawerOpen ? `calc(100% - ${drawerWidth}px)` : '100%',
+        bgcolor: '#ffffff',
+        borderBottom: '1px solid #e6ebf1',
+        boxShadow: 'none',
     };
 
-    const toggleDrawer = () => setOpen(!open);
+
+
 
     const handleProfileMenu = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget);
@@ -293,8 +303,9 @@ function Layout() {
 
             {/* Sidebar Navigation Drawer - Mantis Style */}
             <Drawer
-                variant="persistent"
-                open={open}
+                variant={drawerVariant}
+                open={drawerOpen}
+                onClose={toggleDrawer}
                 sx={{
                     width: drawerWidth,
                     flexShrink: 0,
