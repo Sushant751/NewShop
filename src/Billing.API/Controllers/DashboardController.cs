@@ -1,4 +1,4 @@
-﻿using Billing.Application.Commands.Sales;
+using Billing.Application.Commands.Sales;
 using Billing.Application.DTOs;
 using Billing.Identity.Authorization;
 using Billing.Shared.Enums;
@@ -18,14 +18,15 @@ public class DashboardController : BaseApiController
 {
     [HttpGet]
     [Authorize(Policy = nameof(Permissions.ReportsView))]
-    [SwaggerOperation(Summary = "Get the tenant dashboard summary (sales, purchases, profit, counts, top products, daily sales).")]
+    [SwaggerOperation(Summary = "Get the dashboard summary (sales, purchases, profit, counts, top products, daily sales).")]
     [ProducesResponseType(typeof(Result<DashboardDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetDashboard(
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to,
         CancellationToken cancellationToken = default)
     {
-        var result = await Mediator.Send(new GetDashboardQuery(from, to), cancellationToken);
+        var isGlobalAdmin = User.IsInRole("GlobalAdmin");
+        var result = await Mediator.Send(new GetDashboardQuery(from, to, isGlobalAdmin), cancellationToken);
         return ToActionResult(result);
     }
 }

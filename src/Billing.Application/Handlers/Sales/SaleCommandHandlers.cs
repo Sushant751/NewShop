@@ -15,7 +15,7 @@ public sealed record CancelSaleCommand(Guid SaleId, string? Reason) : IRequest<R
 public sealed record GetSaleByIdQuery(Guid Id) : IRequest<Result<SaleDto>>;
 public sealed record GetSalesQuery(DateTime? From, DateTime? To, int Page = 1, int PageSize = 20)
     : IRequest<Result<PagedResult<SaleDto>>>;
-public sealed record GetDashboardQuery(DateTime? From, DateTime? To) : IRequest<Result<DTOs.DashboardDto>>;
+public sealed record GetDashboardQuery(DateTime? From, DateTime? To, bool IsGlobalAdmin = false) : IRequest<Result<DTOs.DashboardDto>>;
 
 public sealed class CreateSaleHandler : IRequestHandler<CreateSaleCommand, Result<SaleDto>>
 {

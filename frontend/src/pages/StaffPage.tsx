@@ -79,6 +79,14 @@ export default function StaffPage() {
     const columns: GridColDef[] = [
         { field: 'fullName', headerName: 'Full Name', flex: 1 },
         { field: 'email', headerName: 'Email', flex: 1 },
+        ...(isGlobalAdmin ? [{
+            field: 'tenantName',
+            headerName: 'Shop / Tenant',
+            width: 180,
+            renderCell: (params: any) => (
+                <Chip label={params.value || '—'} size="small" color="secondary" variant="outlined" />
+            )
+        } as GridColDef] : []),
         { 
             field: 'role', 
             headerName: 'Role', 

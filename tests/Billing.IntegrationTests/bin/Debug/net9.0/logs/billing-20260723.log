@@ -1,3 +1,0 @@
-2026-07-23 23:27:31.275 +05:30 [INF] HTTP GET /api/nonexistent responded 404 in 46.3349 ms
-2026-07-23 23:27:31.291 +05:30 [INF] HTTP GET /health responded 200 in 66.6969 ms
-2026-07-23 23:27:31.481 +05:30 [INF] HTTP POST /api/auth/revoke responded 401 in 7.3774 ms

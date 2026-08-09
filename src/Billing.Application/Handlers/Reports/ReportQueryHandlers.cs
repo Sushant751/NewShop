@@ -30,11 +30,12 @@ public sealed class GetProfitLossReportHandler : IRequestHandler<GetProfitLossRe
         var to = request.To.HasValue ? request.To.Value.Date.AddDays(1) : DateTime.UtcNow;
         var from = request.From?.Date ?? to.Date.AddDays(-30);
 
-        var cacheKey = $"{CacheKeys.Dashboard(_tenantContext.TenantId!.Value)}:pl:{from:yyyyMMdd}:{to:yyyyMMdd}";
+        var prefix = request.IsGlobalAdmin ? "reports:global" : CacheKeys.Dashboard(_tenantContext.TenantId!.Value);
+        var cacheKey = $"{prefix}:pl:{from:yyyyMMdd}:{to:yyyyMMdd}";
         var cached = await _cache.GetAsync<ProfitLossDto>(cacheKey, cancellationToken);
         if (cached is not null) return Result<ProfitLossDto>.Ok(cached);
 
-        var row = await _reportRepository.GetProfitLossAsync(from, to, cancellationToken);
+        var row = await _reportRepository.GetProfitLossAsync(from, to, request.IsGlobalAdmin, cancellationToken);
         var dto = new ProfitLossDto(row.Revenue, row.CostOfGoods, row.Expenses, row.GrossProfit, row.NetProfit);
 
         await _cache.SetAsync(cacheKey, dto, TimeSpan.FromMinutes(2), cancellationToken);
@@ -60,11 +61,12 @@ public sealed class GetSalesReportHandler : IRequestHandler<GetSalesReportQuery,
         var to = request.To.HasValue ? request.To.Value.Date.AddDays(1) : DateTime.UtcNow;
         var from = request.From?.Date ?? to.Date.AddDays(-30);
 
-        var cacheKey = $"{CacheKeys.Dashboard(_tenantContext.TenantId!.Value)}:sales:{from:yyyyMMdd}:{to:yyyyMMdd}";
+        var prefix = request.IsGlobalAdmin ? "reports:global" : CacheKeys.Dashboard(_tenantContext.TenantId!.Value);
+        var cacheKey = $"{prefix}:sales:{from:yyyyMMdd}:{to:yyyyMMdd}";
         var cached = await _cache.GetAsync<SalesReportSummaryDto>(cacheKey, cancellationToken);
         if (cached is not null) return Result<SalesReportSummaryDto>.Ok(cached);
 
-        var rows = await _reportRepository.GetSalesReportAsync(from, to, cancellationToken);
+        var rows = await _reportRepository.GetSalesReportAsync(from, to, request.IsGlobalAdmin, cancellationToken);
         var sales = rows
             .Select(r => new SalesReportDto(r.SaleDate, r.InvoiceNumber, r.CustomerName, r.SubTotal, r.TaxAmount, r.GrandTotal, Enum.TryParse<SaleStatus>(r.Status, out var s) ? s.ToString() : r.Status, Enum.TryParse<PaymentStatus>(r.PaymentStatus, out var p) ? p.ToString() : r.PaymentStatus))
             .ToList();
@@ -99,11 +101,12 @@ public sealed class GetGstReportHandler : IRequestHandler<GetGstReportQuery, Res
         var to = request.To.HasValue ? request.To.Value.Date.AddDays(1) : DateTime.UtcNow;
         var from = request.From?.Date ?? to.Date.AddDays(-30);
 
-        var cacheKey = $"{CacheKeys.Dashboard(_tenantContext.TenantId!.Value)}:gst:{from:yyyyMMdd}:{to:yyyyMMdd}";
+        var prefix = request.IsGlobalAdmin ? "reports:global" : CacheKeys.Dashboard(_tenantContext.TenantId!.Value);
+        var cacheKey = $"{prefix}:gst:{from:yyyyMMdd}:{to:yyyyMMdd}";
         var cached = await _cache.GetAsync<GstReportDto>(cacheKey, cancellationToken);
         if (cached is not null) return Result<GstReportDto>.Ok(cached);
 
-        var rows = await _reportRepository.GetGstReportAsync(from, to, cancellationToken);
+        var rows = await _reportRepository.GetGstReportAsync(from, to, request.IsGlobalAdmin, cancellationToken);
         var breakdown = rows
             .Select(r => new GstRateBreakdownDto(r.TaxRate, r.TaxableAmount, r.TaxAmount, r.InvoiceCount))
             .ToList();
@@ -137,11 +140,12 @@ public sealed class GetPaymentSummaryReportHandler : IRequestHandler<GetPaymentS
         var to = request.To.HasValue ? request.To.Value.Date.AddDays(1) : DateTime.UtcNow;
         var from = request.From?.Date ?? to.Date.AddDays(-30);
 
-        var cacheKey = $"{CacheKeys.Dashboard(_tenantContext.TenantId!.Value)}:pay:{from:yyyyMMdd}:{to:yyyyMMdd}";
+        var prefix = request.IsGlobalAdmin ? "reports:global" : CacheKeys.Dashboard(_tenantContext.TenantId!.Value);
+        var cacheKey = $"{prefix}:pay:{from:yyyyMMdd}:{to:yyyyMMdd}";
         var cached = await _cache.GetAsync<PaymentSummaryDto>(cacheKey, cancellationToken);
         if (cached is not null) return Result<PaymentSummaryDto>.Ok(cached);
 
-        var rows = await _reportRepository.GetPaymentMethodSummaryAsync(from, to, cancellationToken);
+        var rows = await _reportRepository.GetPaymentMethodSummaryAsync(from, to, request.IsGlobalAdmin, cancellationToken);
         var methods = rows
             .Select(r => new PaymentMethodSummaryDto(int.TryParse(r.PaymentMethod, out var p) ? ((PaymentMethod)p).ToString() : r.PaymentMethod, r.TotalAmount, r.TransactionCount))
             .ToList();
@@ -171,11 +175,12 @@ public sealed class GetInventoryValuationReportHandler : IRequestHandler<GetInve
 
     public async Task<Result<InventoryValuationSummaryDto>> Handle(GetInventoryValuationReportQuery request, CancellationToken cancellationToken)
     {
-        var cacheKey = $"{CacheKeys.Dashboard(_tenantContext.TenantId!.Value)}:invval";
+        var prefix = request.IsGlobalAdmin ? "reports:global" : CacheKeys.Dashboard(_tenantContext.TenantId!.Value);
+        var cacheKey = $"{prefix}:invval";
         var cached = await _cache.GetAsync<InventoryValuationSummaryDto>(cacheKey, cancellationToken);
         if (cached is not null) return Result<InventoryValuationSummaryDto>.Ok(cached);
 
-        var rows = await _reportRepository.GetInventoryValuationAsync(cancellationToken);
+        var rows = await _reportRepository.GetInventoryValuationAsync(request.IsGlobalAdmin, cancellationToken);
         var items = rows
             .Select(r => new InventoryValuationDto(r.ProductId, r.ProductName, r.Sku, r.CurrentStock, r.CostPrice, r.StockValue))
             .ToList();
@@ -208,11 +213,12 @@ public sealed class GetTopProductsReportHandler : IRequestHandler<GetTopProducts
         var to = request.To.HasValue ? request.To.Value.Date.AddDays(1) : DateTime.UtcNow;
         var from = request.From?.Date ?? to.Date.AddDays(-30);
 
-        var cacheKey = $"{CacheKeys.Dashboard(_tenantContext.TenantId!.Value)}:top:{from:yyyyMMdd}:{to:yyyyMMdd}:{request.Top}";
+        var prefix = request.IsGlobalAdmin ? "reports:global" : CacheKeys.Dashboard(_tenantContext.TenantId!.Value);
+        var cacheKey = $"{prefix}:top:{from:yyyyMMdd}:{to:yyyyMMdd}:{request.Top}";
         var cached = await _cache.GetAsync<IReadOnlyList<TopProductDto>>(cacheKey, cancellationToken);
         if (cached is not null) return Result<IReadOnlyList<TopProductDto>>.Ok(cached);
 
-        var rows = await _reportRepository.GetTopProductsAsync(from, to, request.Top, cancellationToken);
+        var rows = await _reportRepository.GetTopProductsAsync(from, to, request.Top, request.IsGlobalAdmin, cancellationToken);
         var dto = rows
             .Select(r => new TopProductDto(r.ProductId, r.ProductName, r.QuantitySold, r.Revenue))
             .ToList();
@@ -238,25 +244,25 @@ public sealed class GetReportsDashboardHandler : IRequestHandler<GetReportsDashb
         var to = request.To.HasValue ? request.To.Value.Date.AddDays(1) : DateTime.UtcNow;
         var from = request.From?.Date ?? to.Date.AddDays(-30);
 
-        var plRow = await _reportRepository.GetProfitLossAsync(from, to, cancellationToken);
+        var plRow = await _reportRepository.GetProfitLossAsync(from, to, request.IsGlobalAdmin, cancellationToken);
         var profitLoss = new ProfitLossDto(plRow.Revenue, plRow.CostOfGoods, plRow.Expenses, plRow.GrossProfit, plRow.NetProfit);
 
-        var salesRows = await _reportRepository.GetSalesReportAsync(from, to, cancellationToken);
+        var salesRows = await _reportRepository.GetSalesReportAsync(from, to, request.IsGlobalAdmin, cancellationToken);
         var sales = salesRows
             .Select(r => new SalesReportDto(r.SaleDate, r.InvoiceNumber, r.CustomerName, r.SubTotal, r.TaxAmount, r.GrandTotal, Enum.TryParse<SaleStatus>(r.Status, out var s) ? s.ToString() : r.Status, Enum.TryParse<PaymentStatus>(r.PaymentStatus, out var p) ? p.ToString() : r.PaymentStatus))
             .ToList();
         var salesSummary = new SalesReportSummaryDto(
             sales, sales.Sum(s => s.SubTotal), sales.Sum(s => s.TaxAmount), sales.Sum(s => s.GrandTotal), sales.Count);
 
-        var payRows = await _reportRepository.GetPaymentMethodSummaryAsync(from, to, cancellationToken);
+        var payRows = await _reportRepository.GetPaymentMethodSummaryAsync(from, to, request.IsGlobalAdmin, cancellationToken);
         var methods = payRows.Select(r => new PaymentMethodSummaryDto(Enum.TryParse<PaymentMethod>(r.PaymentMethod, out var p) ? p.ToString() : r.PaymentMethod, r.TotalAmount, r.TransactionCount)).ToList();
         var paymentSummary = new PaymentSummaryDto(methods, methods.Sum(m => m.TotalAmount), methods.Sum(m => m.TransactionCount));
 
-        var gstRows = await _reportRepository.GetGstReportAsync(from, to, cancellationToken);
+        var gstRows = await _reportRepository.GetGstReportAsync(from, to, request.IsGlobalAdmin, cancellationToken);
         var breakdown = gstRows.Select(r => new GstRateBreakdownDto(r.TaxRate, r.TaxableAmount, r.TaxAmount, r.InvoiceCount)).ToList();
         var gstReport = new GstReportDto(breakdown, breakdown.Sum(b => b.TaxableAmount), breakdown.Sum(b => b.TaxAmount), breakdown.Sum(b => b.InvoiceCount));
 
-        var invRows = await _reportRepository.GetInventoryValuationAsync(cancellationToken);
+        var invRows = await _reportRepository.GetInventoryValuationAsync(request.IsGlobalAdmin, cancellationToken);
         var invItems = invRows.Select(r => new InventoryValuationDto(r.ProductId, r.ProductName, r.Sku, r.CurrentStock, r.CostPrice, r.StockValue)).ToList();
         var inventoryValuation = new InventoryValuationSummaryDto(invItems, invItems.Sum(i => i.StockValue), invItems.Count);
 

@@ -29,13 +29,14 @@ public sealed class GetDashboardHandler : IRequestHandler<GetDashboardQuery, Res
         var to = request.To.HasValue ? request.To.Value.Date.AddDays(1) : DateTime.UtcNow;
         var from = request.From?.Date ?? to.Date.AddDays(-30);
 
-        var cacheKey = CacheKeys.Dashboard(_tenantContext.TenantId!.Value);
+        var prefix = request.IsGlobalAdmin ? "dashboard:global" : CacheKeys.Dashboard(_tenantContext.TenantId!.Value);
+        var cacheKey = $"{prefix}:{from:yyyyMMdd}:{to:yyyyMMdd}";
         var cached = await _cache.GetAsync<DashboardDto>(cacheKey, cancellationToken);
         if (cached is not null) return Result<DashboardDto>.Ok(cached);
 
-        var summary = await _reportRepository.GetDashboardSummaryAsync(from, to, cancellationToken);
-        var topProducts = await _reportRepository.GetTopProductsAsync(from, to, 10, cancellationToken);
-        var dailySales = await _reportRepository.GetDailySalesAsync(from, to, cancellationToken);
+        var summary = await _reportRepository.GetDashboardSummaryAsync(from, to, request.IsGlobalAdmin, cancellationToken);
+        var topProducts = await _reportRepository.GetTopProductsAsync(from, to, 10, request.IsGlobalAdmin, cancellationToken);
+        var dailySales = await _reportRepository.GetDailySalesAsync(from, to, request.IsGlobalAdmin, cancellationToken);
 
         var dto = new DashboardDto(
             summary.TotalSales, summary.TotalPurchases, summary.TotalExpenses, summary.TotalProfit,

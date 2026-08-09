@@ -67,6 +67,8 @@ public interface IUserRepository : IGenericRepository<User>
     Task AssignRoleAsync(Guid userId, Guid roleId, System.Data.IDbTransaction? transaction = null, CancellationToken cancellationToken = default);
     Task RemoveRoleAsync(Guid userId, Guid roleId, System.Data.IDbTransaction? transaction = null, CancellationToken cancellationToken = default);
     Task UpdateLastLoginAsync(Guid userId, string? ip, string? deviceInfo, System.Data.IDbTransaction? transaction = null, CancellationToken cancellationToken = default);
+    /// <summary>Returns all users across every tenant, each with their tenant name. GlobalAdmin only.</summary>
+    Task<IReadOnlyList<(User User, string TenantName)>> GetAllGlobalAsync(System.Data.IDbTransaction? transaction = null, CancellationToken cancellationToken = default);
 }
 
 public interface IRefreshTokenRepository : IGenericRepository<RefreshToken>
@@ -83,14 +85,14 @@ public interface IAuditLogRepository : IGenericRepository<AuditLog>
 
 public interface IReportRepository
 {
-    Task<DashboardSummary> GetDashboardSummaryAsync(DateTime from, DateTime to, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<TopProductRow>> GetTopProductsAsync(DateTime from, DateTime to, int top = 10, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<DailySalesRow>> GetDailySalesAsync(DateTime from, DateTime to, CancellationToken cancellationToken = default);
-    Task<ProfitLossRow> GetProfitLossAsync(DateTime from, DateTime to, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<SalesReportRow>> GetSalesReportAsync(DateTime from, DateTime to, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<GstRateBreakdownRow>> GetGstReportAsync(DateTime from, DateTime to, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<PaymentMethodSummaryRow>> GetPaymentMethodSummaryAsync(DateTime from, DateTime to, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<InventoryValuationRow>> GetInventoryValuationAsync(CancellationToken cancellationToken = default);
+    Task<DashboardSummary> GetDashboardSummaryAsync(DateTime from, DateTime to, bool isGlobalAdmin = false, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<TopProductRow>> GetTopProductsAsync(DateTime from, DateTime to, int top = 10, bool isGlobalAdmin = false, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<DailySalesRow>> GetDailySalesAsync(DateTime from, DateTime to, bool isGlobalAdmin = false, CancellationToken cancellationToken = default);
+    Task<ProfitLossRow> GetProfitLossAsync(DateTime from, DateTime to, bool isGlobalAdmin = false, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<SalesReportRow>> GetSalesReportAsync(DateTime from, DateTime to, bool isGlobalAdmin = false, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<GstRateBreakdownRow>> GetGstReportAsync(DateTime from, DateTime to, bool isGlobalAdmin = false, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<PaymentMethodSummaryRow>> GetPaymentMethodSummaryAsync(DateTime from, DateTime to, bool isGlobalAdmin = false, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<InventoryValuationRow>> GetInventoryValuationAsync(bool isGlobalAdmin = false, CancellationToken cancellationToken = default);
 }
 
 public sealed record DashboardSummary(

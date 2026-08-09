@@ -22,11 +22,12 @@ public class UsersController : BaseApiController
     }
 
     [HttpGet]
-    [SwaggerOperation(Summary = "Get all users for the current tenant.")]
+    [SwaggerOperation(Summary = "Get all users for the current tenant (GlobalAdmin sees all tenants).")]
     [ProducesResponseType(typeof(Result<IReadOnlyList<UserDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUsers(CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetUsersQuery(), cancellationToken);
+        var includeAllTenants = User.IsInRole("GlobalAdmin");
+        var result = await _mediator.Send(new GetUsersQuery(includeAllTenants), cancellationToken);
         return ToActionResult(result);
     }
 

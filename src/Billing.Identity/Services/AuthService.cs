@@ -127,9 +127,11 @@ public sealed class AuthService : IAuthService
 
             await _unitOfWork.CommitAsync(cancellationToken);
 
+            var tenantDisplayName = roles.Contains("GlobalAdmin") ? "App Admin" : tenant.Name;
+
             return Result<LoginResponse>.Ok(new LoginResponse(
                 accessToken, refreshToken, accessExpiresAt,
-                user.Id, tenant.Id, tenant.Name, user.UserName, user.Email, user.FullName,
+                user.Id, tenant.Id, tenantDisplayName, user.UserName, user.Email, user.FullName,
                 roles, permissions), "Login successful.");
         }
         catch

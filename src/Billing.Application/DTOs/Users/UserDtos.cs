@@ -8,7 +8,8 @@ public sealed record UserDto(
     string? PhoneNumber,
     bool IsActive,
     DateTime? LastLoginAt,
-    List<string> Roles
+    List<string> Roles,
+    string? TenantName = null
 );
 
 public sealed record CreateUserRequest(

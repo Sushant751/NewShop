@@ -108,6 +108,42 @@ public sealed class UserRepository : GenericRepository<User>, IUserRepository
             new { UserId = userId, TenantId = tenantId, Now = DateTime.UtcNow, Ip = ip, DeviceInfo = deviceInfo },
             transaction, cancellationToken: cancellationToken));
     }
+
+    public async Task<IReadOnlyList<(User User, string TenantName)>> GetAllGlobalAsync(IDbTransaction? transaction = null, CancellationToken cancellationToken = default)
+    {
+        // No tenant filter — returns all users across all tenants joined with Tenants for the shop name.
+        const string sql = @"
+            SELECT u.*, t.Name AS TenantNameAlias
+            FROM Users u
+            INNER JOIN Tenants t ON t.Id = u.TenantId AND t.IsDeleted = 0
+            WHERE u.IsDeleted = 0
+            ORDER BY t.Name, u.CreatedDate DESC;";
+        var connection = await GetConnectionAsync(transaction, cancellationToken);
+        var result = await connection.QueryAsync(
+            new CommandDefinition(sql, cancellationToken: cancellationToken));
+
+        var list = new List<(User, string)>();
+        foreach (var row in result)
+        {
+            var dict = (IDictionary<string, object>)row;
+            var tenantName = dict.TryGetValue("TenantNameAlias", out var tn) ? tn?.ToString() ?? "" : "";
+            var user = new User
+            {
+                Id              = (Guid)dict["Id"],
+                TenantId        = (Guid)dict["TenantId"],
+                UserName        = dict["UserName"]?.ToString() ?? "",
+                Email           = dict["Email"]?.ToString() ?? "",
+                NormalizedEmail = dict["NormalizedEmail"]?.ToString() ?? "",
+                FullName        = dict["FullName"]?.ToString() ?? "",
+                PhoneNumber     = dict["PhoneNumber"]?.ToString(),
+                IsActive        = (bool)dict["IsActive"],
+                LastLoginAt     = dict.TryGetValue("LastLoginAt", out var ll) ? ll as DateTime? : null,
+                CreatedDate     = dict.TryGetValue("CreatedDate", out var cd) && cd is DateTime d ? d : DateTime.MinValue,
+            };
+            list.Add((user, tenantName));
+        }
+        return list;
+    }
 }
 
 public sealed class RefreshTokenRepository : GenericRepository<RefreshToken>, IRefreshTokenRepository
@@ -144,6 +180,7 @@ public sealed class RefreshTokenRepository : GenericRepository<RefreshToken>, IR
             transaction, cancellationToken: cancellationToken));
     }
 }
+
 
 public sealed class AuditLogRepository : GenericRepository<AuditLog>, IAuditLogRepository
 {

@@ -146,6 +146,14 @@ function SettingsPage() {
                             <Grid container spacing={2}>
                                 <Grid item xs={12} sm={6}>
                                     <Typography variant="body2" color="text.secondary">
+                                        Shop / Tenant Name
+                                    </Typography>
+                                    <Typography variant="body2" fontWeight="600" gutterBottom>
+                                        {user?.roles?.includes('GlobalAdmin') ? 'App Admin (All Tenants)' : (user?.tenantName || 'My Shop')}
+                                    </Typography>
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                    <Typography variant="body2" color="text.secondary">
                                         Tenant ID
                                     </Typography>
                                     <Typography variant="body2" gutterBottom sx={{ wordBreak: 'break-all' }}>

@@ -38,9 +38,12 @@ import LogoutIcon from '@mui/icons-material/LogoutOutlined';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import SearchIcon from '@mui/icons-material/Search';
 import StorefrontIcon from '@mui/icons-material/Storefront';
+import { useQueryClient } from 'react-query';
 import { useAppDispatch, useAppSelector } from '../store';
 import { logoutUser } from '../store/slices/authSlice';
 import { Permissions, Roles } from '../types';
+
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
 const drawerWidth = 260;
 
@@ -57,7 +60,26 @@ interface NavItem {
     badge?: string;
 }
 
-const navGroups: NavGroup[] = [
+// Global Admin: Dedicated administrative suite — only staff management, system analytics, and platform settings.
+const globalAdminNavGroups: NavGroup[] = [
+    {
+        category: 'PLATFORM MANAGEMENT',
+        items: [
+            { label: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
+            { label: 'All Users & Staff', path: '/staff', icon: <PeopleIcon /> },
+        ],
+    },
+    {
+        category: 'SYSTEM & ANALYTICS',
+        items: [
+            { label: 'Platform Reports', path: '/reports', icon: <AssessmentIcon /> },
+            { label: 'Settings', path: '/settings', icon: <SettingsIcon /> },
+        ],
+    },
+];
+
+// Shop Admins & Staff: Operational POS, store inventory, suppliers, customers, and sales.
+const shopNavGroups: NavGroup[] = [
     {
         category: 'NAVIGATION',
         items: [
@@ -73,7 +95,7 @@ const navGroups: NavGroup[] = [
             { label: 'Customers', path: '/customers', icon: <PeopleIcon />, permission: Permissions.CustomersView },
             { label: 'Suppliers', path: '/suppliers', icon: <LocalShippingIcon />, permission: Permissions.PurchasesView },
             { label: 'Purchases', path: '/purchases', icon: <ShoppingBagIcon />, permission: Permissions.PurchasesView },
-            { label: 'Staff & Users', path: '/staff', icon: <PeopleIcon />, permission: Permissions.StaffManage },
+            { label: 'Staff', path: '/staff', icon: <PeopleIcon />, permission: Permissions.StaffManage },
         ],
     },
     {
@@ -94,11 +116,12 @@ function Layout() {
     const user = useAppSelector((state) => state.auth.user);
 
     const isGlobalAdmin = user?.roles?.includes(Roles.GlobalAdmin);
+    const activeNavGroups = isGlobalAdmin ? globalAdminNavGroups : shopNavGroups;
 
     const canAccess = (item: NavItem): boolean => {
-        if (!item.permission) return true;
         if (isGlobalAdmin) return true;
-        if (user?.roles?.includes(Roles.ShopAdmin)) return true; // Shop admin can generally manage staff
+        if (!item.permission) return true;
+        if (user?.roles?.includes(Roles.ShopAdmin)) return true; // Shop admin can manage store staff
         return user?.permissions?.includes(item.permission) ?? false;
     };
 
@@ -110,8 +133,13 @@ function Layout() {
 
     const handleCloseMenu = () => setAnchorEl(null);
 
+    const queryClient = useQueryClient();
+
     const handleLogout = async () => {
         await dispatch(logoutUser());
+        // Clear ALL cached query data so the next user never sees stale data
+        // from the previous session (e.g. dashboard, reports, users).
+        queryClient.clear();
         navigate('/login');
     };
 
@@ -182,14 +210,15 @@ function Layout() {
                     {/* Live Tenant Info Badge */}
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mr: 2 }}>
                         <Chip
-                            label={(user?.roles?.[0] || 'STAFF').toUpperCase()}
+                            label={isGlobalAdmin ? 'APP ADMIN' : (user?.tenantName || user?.roles?.[0] || 'STAFF').toUpperCase()}
                             size="small"
                             sx={{
-                                bgcolor: '#e8f0ff',
-                                color: '#4680ff',
+                                bgcolor: isGlobalAdmin ? '#f6ffed' : '#e8f0ff',
+                                color: isGlobalAdmin ? '#52c41a' : '#4680ff',
                                 fontWeight: 700,
                                 fontSize: '0.7rem',
                                 borderRadius: 1.5,
+                                border: isGlobalAdmin ? '1px solid #b7eb8f' : 'none',
                             }}
                         />
                     </Box>
@@ -291,28 +320,28 @@ function Layout() {
                 >
                     <Box
                         sx={{
-                            bgcolor: '#4680ff',
+                            bgcolor: isGlobalAdmin ? '#1890ff' : '#4680ff',
                             color: '#ffffff',
                             borderRadius: 2,
                             p: 1,
                             display: 'flex',
-                            boxShadow: '0 2px 8px rgba(70, 128, 255, 0.35)',
+                            boxShadow: isGlobalAdmin ? '0 2px 8px rgba(24, 144, 255, 0.35)' : '0 2px 8px rgba(70, 128, 255, 0.35)',
                         }}
                     >
-                        <StorefrontIcon />
+                        {isGlobalAdmin ? <AdminPanelSettingsIcon /> : <StorefrontIcon />}
                     </Box>
                     <Box>
                         <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2, color: '#1d2630' }}>
-                            {user?.tenantName || 'My Shop'}
+                            {isGlobalAdmin ? 'App Admin' : (user?.tenantName || 'My Shop')}
                         </Typography>
-                        <Typography variant="caption" sx={{ color: '#8c8c8c', fontWeight: 500 }}>
-                            {(user?.roles?.[0] || 'STAFF').toUpperCase()}
+                        <Typography variant="caption" sx={{ color: isGlobalAdmin ? '#52c41a' : '#8c8c8c', fontWeight: 600 }}>
+                            {isGlobalAdmin ? 'GLOBAL ADMIN' : (user?.roles?.[0] || 'STAFF').toUpperCase()}
                         </Typography>
                     </Box>
                 </Box>
 
                 <Box sx={{ overflow: 'auto', py: 1 }}>
-                    {navGroups.map((group) => {
+                    {activeNavGroups.map((group) => {
                         const accessibleItems = group.items.filter(canAccess);
                         if (accessibleItems.length === 0) return null;
 

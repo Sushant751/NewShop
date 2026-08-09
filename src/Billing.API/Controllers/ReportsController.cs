@@ -26,7 +26,8 @@ public class ReportsController : BaseApiController
         [FromQuery] DateTime? to,
         CancellationToken cancellationToken = default)
     {
-        var result = await Mediator.Send(new GetProfitLossReportQuery(from, to), cancellationToken);
+        var isGlobalAdmin = User.IsInRole("GlobalAdmin");
+        var result = await Mediator.Send(new GetProfitLossReportQuery(from, to, isGlobalAdmin), cancellationToken);
         return ToActionResult(result);
     }
 
@@ -39,7 +40,8 @@ public class ReportsController : BaseApiController
         [FromQuery] DateTime? to,
         CancellationToken cancellationToken = default)
     {
-        var result = await Mediator.Send(new GetSalesReportQuery(from, to), cancellationToken);
+        var isGlobalAdmin = User.IsInRole("GlobalAdmin");
+        var result = await Mediator.Send(new GetSalesReportQuery(from, to, isGlobalAdmin), cancellationToken);
         return ToActionResult(result);
     }
 
@@ -52,7 +54,8 @@ public class ReportsController : BaseApiController
         [FromQuery] DateTime? to,
         CancellationToken cancellationToken = default)
     {
-        var result = await Mediator.Send(new GetSalesReportQuery(from, to), cancellationToken);
+        var isGlobalAdmin = User.IsInRole("GlobalAdmin");
+        var result = await Mediator.Send(new GetSalesReportQuery(from, to, isGlobalAdmin), cancellationToken);
         if (!result.Success || result.Data is null)
             return ToActionResult(result);
 
@@ -69,7 +72,8 @@ public class ReportsController : BaseApiController
         [FromQuery] DateTime? to,
         CancellationToken cancellationToken = default)
     {
-        var result = await Mediator.Send(new GetGstReportQuery(from, to), cancellationToken);
+        var isGlobalAdmin = User.IsInRole("GlobalAdmin");
+        var result = await Mediator.Send(new GetGstReportQuery(from, to, isGlobalAdmin), cancellationToken);
         return ToActionResult(result);
     }
 
@@ -82,7 +86,8 @@ public class ReportsController : BaseApiController
         [FromQuery] DateTime? to,
         CancellationToken cancellationToken = default)
     {
-        var result = await Mediator.Send(new GetGstReportQuery(from, to), cancellationToken);
+        var isGlobalAdmin = User.IsInRole("GlobalAdmin");
+        var result = await Mediator.Send(new GetGstReportQuery(from, to, isGlobalAdmin), cancellationToken);
         if (!result.Success || result.Data is null)
             return ToActionResult(result);
 
@@ -99,7 +104,8 @@ public class ReportsController : BaseApiController
         [FromQuery] DateTime? to,
         CancellationToken cancellationToken = default)
     {
-        var result = await Mediator.Send(new GetPaymentSummaryReportQuery(from, to), cancellationToken);
+        var isGlobalAdmin = User.IsInRole("GlobalAdmin");
+        var result = await Mediator.Send(new GetPaymentSummaryReportQuery(from, to, isGlobalAdmin), cancellationToken);
         return ToActionResult(result);
     }
 
@@ -109,7 +115,8 @@ public class ReportsController : BaseApiController
     [ProducesResponseType(typeof(Result<InventoryValuationSummaryDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetInventoryValuation(CancellationToken cancellationToken = default)
     {
-        var result = await Mediator.Send(new GetInventoryValuationReportQuery(), cancellationToken);
+        var isGlobalAdmin = User.IsInRole("GlobalAdmin");
+        var result = await Mediator.Send(new GetInventoryValuationReportQuery(isGlobalAdmin), cancellationToken);
         return ToActionResult(result);
     }
 
@@ -119,7 +126,8 @@ public class ReportsController : BaseApiController
     [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
     public async Task<IActionResult> ExportInventoryValuation(CancellationToken cancellationToken = default)
     {
-        var result = await Mediator.Send(new GetInventoryValuationReportQuery(), cancellationToken);
+        var isGlobalAdmin = User.IsInRole("GlobalAdmin");
+        var result = await Mediator.Send(new GetInventoryValuationReportQuery(isGlobalAdmin), cancellationToken);
         if (!result.Success || result.Data is null)
             return ToActionResult(result);
 
@@ -137,7 +145,8 @@ public class ReportsController : BaseApiController
         [FromQuery] int top = 20,
         CancellationToken cancellationToken = default)
     {
-        var result = await Mediator.Send(new GetTopProductsReportQuery(from, to, top), cancellationToken);
+        var isGlobalAdmin = User.IsInRole("GlobalAdmin");
+        var result = await Mediator.Send(new GetTopProductsReportQuery(from, to, top, isGlobalAdmin), cancellationToken);
         return ToActionResult(result);
     }
 
@@ -150,7 +159,8 @@ public class ReportsController : BaseApiController
         [FromQuery] DateTime? to,
         CancellationToken cancellationToken = default)
     {
-        var result = await Mediator.Send(new GetReportsDashboardQuery(from, to), cancellationToken);
+        var isGlobalAdmin = User.IsInRole("GlobalAdmin");
+        var result = await Mediator.Send(new GetReportsDashboardQuery(from, to, isGlobalAdmin), cancellationToken);
         return ToActionResult(result);
     }
 

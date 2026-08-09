@@ -239,6 +239,7 @@ export interface UserDto {
     isActive: boolean;
     lastLoginAt?: string;
     roles: string[];
+    tenantName?: string;
 }
 
 export interface CreateUserRequest {

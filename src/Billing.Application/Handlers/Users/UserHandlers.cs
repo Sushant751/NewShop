@@ -24,24 +24,46 @@ public sealed class GetUsersHandler : IRequestHandler<GetUsersQuery, Result<IRea
 
     public async Task<Result<IReadOnlyList<UserDto>>> Handle(GetUsersQuery request, CancellationToken cancellationToken)
     {
-        // For brevity in this implementation, we will just fetch users and return basic DTOs.
-        // A complete implementation would map roles too.
-        var users = await _repository.GetAllAsync(null, cancellationToken);
         var dtos = new List<UserDto>();
-        
-        foreach (var user in users)
+
+        if (request.IncludeAllTenants)
         {
-            var roles = await _repository.GetRolesAsync(user.Id, null, cancellationToken);
-            dtos.Add(new UserDto(
-                user.Id,
-                user.UserName,
-                user.Email,
-                user.FullName,
-                user.PhoneNumber,
-                user.IsActive,
-                user.LastLoginAt,
-                roles.ToList()
-            ));
+            // GlobalAdmin: fetch every user across all tenants with their shop name.
+            var allUsers = await _repository.GetAllGlobalAsync(null, cancellationToken);
+            foreach (var (user, tenantName) in allUsers)
+            {
+                var roles = await _repository.GetRolesAsync(user.Id, null, cancellationToken);
+                dtos.Add(new UserDto(
+                    user.Id,
+                    user.UserName,
+                    user.Email,
+                    user.FullName,
+                    user.PhoneNumber,
+                    user.IsActive,
+                    user.LastLoginAt,
+                    roles.ToList(),
+                    tenantName
+                ));
+            }
+        }
+        else
+        {
+            // Tenant-scoped: only users belonging to the current tenant.
+            var users = await _repository.GetAllAsync(null, cancellationToken);
+            foreach (var user in users)
+            {
+                var roles = await _repository.GetRolesAsync(user.Id, null, cancellationToken);
+                dtos.Add(new UserDto(
+                    user.Id,
+                    user.UserName,
+                    user.Email,
+                    user.FullName,
+                    user.PhoneNumber,
+                    user.IsActive,
+                    user.LastLoginAt,
+                    roles.ToList()
+                ));
+            }
         }
 
         return Result<IReadOnlyList<UserDto>>.Ok(dtos);

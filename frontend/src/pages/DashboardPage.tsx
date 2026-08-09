@@ -41,6 +41,9 @@ import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import DownloadIcon from '@mui/icons-material/DownloadOutlined';
 import { dashboardApi } from '../api/endpoints';
 import type { DashboardDto } from '../types';
+import { formatCurrency } from '../utils/helpers';
+import { useAppSelector, RootState } from '../store';
+import { Roles } from '../types';
 
 interface MantisStatCardProps {
     title: string;
@@ -131,6 +134,9 @@ function pctDiff(current: number, previous: number): number | null {
 }
 
 function DashboardPage() {
+    const currentUser = useAppSelector((state: RootState) => state.auth.user);
+    const isGlobalAdmin = currentUser?.roles?.includes(Roles.GlobalAdmin);
+
     const today = new Date();
     const monthAgo = new Date();
     monthAgo.setDate(today.getDate() - 30);
@@ -175,9 +181,6 @@ function DashboardPage() {
         );
     }
 
-    const formatCurrency = (val: number) =>
-        new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
-
     const dailySalesData =
         data?.dailySales?.map((d) => ({
             date: new Date(d.date).toLocaleDateString('en-US', { day: '2-digit', month: 'short' }),
@@ -194,18 +197,31 @@ function DashboardPage() {
                 sx={{
                     display: 'flex',
                     flexDirection: { xs: 'column', sm: 'row' },
-                    justify: 'space-between',
+                    justifyContent: 'space-between',
                     alignItems: { xs: 'flex-start', sm: 'center' },
                     gap: 2,
                     mb: 3.5,
                 }}
             >
                 <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 700, color: '#1d2630' }}>
-                        Dashboard Analytics
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
+                        <Typography variant="h4" sx={{ fontWeight: 700, color: '#1d2630' }}>
+                            Dashboard Analytics
+                        </Typography>
+                        {isGlobalAdmin && (
+                            <Chip
+                                label="App Admin — All Shops Consolidated"
+                                size="small"
+                                color="success"
+                                variant="outlined"
+                                sx={{ fontWeight: 700, height: 24, fontSize: '0.75rem' }}
+                            />
+                        )}
+                    </Box>
                     <Typography variant="body2" sx={{ color: '#5b6b79' }}>
-                        Real-time overview of sales performance, inventory status, and revenue trends.
+                        {isGlobalAdmin
+                            ? 'Consolidated real-time overview across all registered shops/tenants, sales performance, and platform revenue trends.'
+                            : 'Real-time overview of sales performance, inventory status, and revenue trends.'}
                     </Typography>
                 </Box>
 
