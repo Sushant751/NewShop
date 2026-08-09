@@ -85,6 +85,11 @@ function PurchasesPage() {
         () => suppliersApi.list({ page: 1, pageSize: 1000 }),
     );
 
+    const { data: allProducts } = useQuery<PagedResult<ProductDto>>(
+        ['products-list-short'],
+        () => productsApi.list({ page: 1, pageSize: 100 }),
+    );
+
     const productSearchQuery = useQuery<ProductDto[]>(
         ['product-search', productSearch],
         () => productsApi.search(productSearch, 20),
@@ -96,6 +101,7 @@ function PurchasesPage() {
         {
             onSuccess: () => {
                 queryClient.invalidateQueries(['purchases']);
+                queryClient.invalidateQueries(['products']);
                 setCreateDialogOpen(false);
                 resetForm();
             },
@@ -125,6 +131,7 @@ function PurchasesPage() {
 
     const openCreate = () => {
         resetForm();
+        createMutation.reset();
         setCreateDialogOpen(true);
     };
 
@@ -190,17 +197,17 @@ function PurchasesPage() {
             }
         }
 
-        // Use first shop from user context - in a real app this would come from a shop selector
-        const shopId = user?.userId || '';
-
         createMutation.mutate({
             supplierId,
-            shopId,
+            shopId: null,
             items: items.map((item) => ({
                 productId: item.productId,
                 quantity: parseFloat(item.quantity),
                 unitCost: parseFloat(item.unitCost),
+                taxRate: 0,
             })),
+            discountAmount: 0,
+            paidAmount: 0,
             notes: notes.trim() || null,
         });
     };
@@ -334,6 +341,11 @@ function PurchasesPage() {
                                 {formError}
                             </Alert>
                         )}
+                        {createMutation.isError && (
+                            <Alert severity="error" sx={{ mb: 2 }}>
+                                {getErrorMessage(createMutation.error)}
+                            </Alert>
+                        )}
                         <Grid container spacing={2} sx={{ mt: 0 }}>
                             <Grid item xs={12} sm={6}>
                                 <TextField
@@ -352,8 +364,7 @@ function PurchasesPage() {
                             </Grid>
                             <Grid item xs={12} sm={6}>
                                 <Autocomplete
-                                    freeSolo
-                                    options={productSearchQuery.data || []}
+                                    options={productSearch.length >= 2 ? (productSearchQuery.data || []) : (allProducts?.items || [])}
                                     getOptionLabel={(option) =>
                                         typeof option === 'string' ? option : option.name
                                     }
@@ -367,8 +378,8 @@ function PurchasesPage() {
                                     renderInput={(params) => (
                                         <TextField
                                             {...params}
-                                            label="Search product to add..."
-                                            placeholder="Type product name..."
+                                            label="Select / Search product to add..."
+                                            placeholder="Choose product..."
                                         />
                                     )}
                                     isOptionEqualToValue={(option, value) => option.id === value.id}

@@ -331,12 +331,15 @@ export interface PurchaseItemRequest {
     productId: string;
     quantity: number;
     unitCost: number;
+    taxRate?: number;
 }
 
 export interface CreatePurchaseRequest {
     supplierId: string;
-    shopId: string;
+    shopId?: string | null;
     items: PurchaseItemRequest[];
+    discountAmount?: number;
+    paidAmount?: number;
     notes?: string | null;
 }
 
