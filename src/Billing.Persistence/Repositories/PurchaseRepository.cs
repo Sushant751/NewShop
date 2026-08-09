@@ -41,6 +41,8 @@ public sealed class PurchaseRepository : GenericRepository<Purchase>, IPurchaseR
     {
         var tenantId = RequireTenantId();
         if (purchase.Id == Guid.Empty) purchase.Id = Guid.NewGuid();
+        var connection = await GetConnectionAsync(transaction, cancellationToken);
+        if (purchase.ShopId == Guid.Empty) purchase.ShopId = null;
         purchase.TenantId = tenantId;
         purchase.CreatedDate = DateTime.UtcNow;
         purchase.CreatedBy ??= TenantContext.UserId;

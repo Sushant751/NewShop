@@ -668,8 +668,6 @@ CREATE TABLE dbo.Purchases
     CONSTRAINT PK_Purchases PRIMARY KEY CLUSTERED (Id),
     CONSTRAINT FK_Purchases_Tenants FOREIGN KEY (TenantId)
         REFERENCES dbo.Tenants (Id),
-    CONSTRAINT FK_Purchases_Shops FOREIGN KEY (ShopId)
-        REFERENCES dbo.Shops (Id),
     CONSTRAINT FK_Purchases_Suppliers FOREIGN KEY (SupplierId)
         REFERENCES dbo.Suppliers (Id)
 );
