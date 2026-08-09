@@ -118,15 +118,13 @@ try
     app.UseCors("BillingCors");
     app.UseResponseCompression();
 
-    if (app.Environment.IsDevelopment())
+    // Enable Swagger in all environments for testing & documentation
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
     {
-        app.UseSwagger();
-        app.UseSwaggerUI(options =>
-        {
-            options.SwaggerEndpoint("/swagger/v1/swagger.json", "Billing & POS API v1");
-            options.RoutePrefix = "swagger";
-        });
-    }
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Billing & POS API v1");
+        options.RoutePrefix = "swagger";
+    });
 
     app.UseMiddleware<GlobalExceptionMiddleware>();
 

@@ -47,8 +47,7 @@ public sealed class GlobalExceptionMiddleware
             ConflictException => (StatusCodes.Status409Conflict, exception.Message, Array.Empty<string>()),
             TenantContextMissingException => (StatusCodes.Status400BadRequest, exception.Message, Array.Empty<string>()),
             AppException => (StatusCodes.Status400BadRequest, exception.Message, Array.Empty<string>()),
-            UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Unauthorized access.", Array.Empty<string>()),
-            _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred. Please try again later.", Array.Empty<string>())
+            _ => (StatusCodes.Status500InternalServerError, string.IsNullOrWhiteSpace(exception.Message) ? "An unexpected error occurred. Please try again later." : exception.Message, Array.Empty<string>())
         };
 
         if (statusCode >= 500)
