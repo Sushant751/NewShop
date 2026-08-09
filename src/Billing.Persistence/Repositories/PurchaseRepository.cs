@@ -70,7 +70,6 @@ public sealed class PurchaseRepository : GenericRepository<Purchase>, IPurchaseR
                 CostPrice = @UnitCost
             WHERE Id = @ProductId AND TenantId = @TenantId AND IsDeleted = 0;";
 
-        var connection = await GetConnectionAsync(transaction, cancellationToken);
         await connection.ExecuteAsync(new CommandDefinition(purchaseSql, purchase, transaction, cancellationToken: cancellationToken));
 
         foreach (var item in purchase.Items)
@@ -84,5 +83,14 @@ public sealed class PurchaseRepository : GenericRepository<Purchase>, IPurchaseR
         }
 
         return purchase.Id;
+    }
+
+    public async Task<string?> GetSupplierNameAsync(Guid supplierId, IDbTransaction? transaction = null, CancellationToken cancellationToken = default)
+    {
+        var tenantId = RequireTenantId();
+        const string sql = "SELECT Name FROM dbo.Suppliers WHERE Id = @SupplierId AND TenantId = @TenantId AND IsDeleted = 0";
+        var connection = await GetConnectionAsync(transaction, cancellationToken);
+        return await connection.ExecuteScalarAsync<string?>(
+            new CommandDefinition(sql, new { SupplierId = supplierId, TenantId = tenantId }, transaction, cancellationToken: cancellationToken));
     }
 }

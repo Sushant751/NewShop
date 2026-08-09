@@ -169,10 +169,11 @@ public sealed class CreatePurchaseHandler : IRequestHandler<CreatePurchaseComman
             await _cache.RemoveByPatternAsync("dashboard:*", cancellationToken);
 
             var created = await _purchaseRepository.GetWithItemsAsync(purchaseId, null, cancellationToken);
+            var supplierName = await _purchaseRepository.GetSupplierNameAsync(created!.SupplierId, null, cancellationToken);
             var dto = new PurchaseDto
             {
-                Id = created!.Id, PurchaseNumber = created.PurchaseNumber, ShopId = created.ShopId,
-                SupplierId = created.SupplierId, SupplierName = null, PurchaseDate = created.PurchaseDate,
+                Id = created.Id, PurchaseNumber = created.PurchaseNumber, ShopId = created.ShopId,
+                SupplierId = created.SupplierId, SupplierName = supplierName, PurchaseDate = created.PurchaseDate,
                 Status = created.Status, SubTotal = created.SubTotal, DiscountAmount = created.DiscountAmount,
                 TaxAmount = created.TaxAmount, GrandTotal = created.GrandTotal, PaidAmount = created.PaidAmount,
                 BalanceDue = created.BalanceDue, Notes = created.Notes,
@@ -198,10 +199,11 @@ public sealed class GetPurchaseByIdHandler : IRequestHandler<GetPurchaseByIdQuer
     {
         var entity = await _repository.GetWithItemsAsync(request.Id, null, cancellationToken)
             ?? throw new NotFoundException(nameof(Domain.Entities.Purchase), request.Id);
+        var supplierName = await _repository.GetSupplierNameAsync(entity.SupplierId, null, cancellationToken);
         var dto = new PurchaseDto
         {
             Id = entity.Id, PurchaseNumber = entity.PurchaseNumber, ShopId = entity.ShopId,
-            SupplierId = entity.SupplierId, SupplierName = null, PurchaseDate = entity.PurchaseDate,
+            SupplierId = entity.SupplierId, SupplierName = supplierName, PurchaseDate = entity.PurchaseDate,
             Status = entity.Status, SubTotal = entity.SubTotal, DiscountAmount = entity.DiscountAmount,
             TaxAmount = entity.TaxAmount, GrandTotal = entity.GrandTotal, PaidAmount = entity.PaidAmount,
             BalanceDue = entity.BalanceDue, Notes = entity.Notes,
@@ -214,16 +216,25 @@ public sealed class GetPurchaseByIdHandler : IRequestHandler<GetPurchaseByIdQuer
 public sealed class GetPurchasesHandler : IRequestHandler<GetPurchasesQuery, Result<PagedResult<PurchaseDto>>>
 {
     private readonly IPurchaseRepository _repository;
+    private readonly ISupplierRepository _supplierRepository;
     private readonly IMapper _mapper;
-    public GetPurchasesHandler(IPurchaseRepository repository, IMapper mapper)
-    { _repository = repository; _mapper = mapper; }
+    public GetPurchasesHandler(IPurchaseRepository repository, ISupplierRepository supplierRepository, IMapper mapper)
+    { _repository = repository; _supplierRepository = supplierRepository; _mapper = mapper; }
 
     public async Task<Result<PagedResult<PurchaseDto>>> Handle(GetPurchasesQuery request, CancellationToken cancellationToken)
     {
         var (items, total) = await _repository.GetPagedAsync(request.Page, request.PageSize, null, null, true, null, cancellationToken);
+        var suppliers = (await _supplierRepository.GetAllAsync(null, cancellationToken)).ToDictionary(s => s.Id, s => s.Name);
+        
+        var dtos = items.Select(p =>
+        {
+            var dto = _mapper.Map<PurchaseDto>(p);
+            return dto with { SupplierName = suppliers.GetValueOrDefault(p.SupplierId) };
+        }).ToList();
+
         return Result<PagedResult<PurchaseDto>>.Ok(new PagedResult<PurchaseDto>
         {
-            Items = items.Select(_mapper.Map<PurchaseDto>).ToList(),
+            Items = dtos,
             Page = request.Page, PageSize = request.PageSize, Total = total
         });
     }

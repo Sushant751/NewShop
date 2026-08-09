@@ -233,7 +233,17 @@ function PurchasesPage() {
             minWidth: 150,
             valueFormatter: (value: string) => new Date(value).toLocaleString(),
         },
-        { field: 'supplierName', headerName: 'Supplier', flex: 1, minWidth: 150 },
+        {
+            field: 'supplierName',
+            headerName: 'Supplier',
+            flex: 1,
+            minWidth: 150,
+            valueGetter: (_value, row) => {
+                if (row.supplierName) return row.supplierName;
+                const found = supplierList.find((s) => s.id === row.supplierId);
+                return found ? found.name : '—';
+            },
+        },
         {
             field: 'status',
             headerName: 'Status',
@@ -494,7 +504,9 @@ function PurchasesPage() {
                                 </Grid>
                                 <Grid item xs={6}>
                                     <Typography variant="body2" color="text.secondary">Supplier</Typography>
-                                    <Typography variant="body1">{detailQuery.data.supplierName || '—'}</Typography>
+                                    <Typography variant="body1">
+                                        {detailQuery.data.supplierName || supplierList.find((s) => s.id === detailQuery.data.supplierId)?.name || '—'}
+                                    </Typography>
                                 </Grid>
                                 <Grid item xs={6}>
                                     <Typography variant="body2" color="text.secondary">Status</Typography>

@@ -39,6 +39,7 @@ public interface IPurchaseRepository : IGenericRepository<Purchase>
     Task<Purchase?> GetWithItemsAsync(Guid id, System.Data.IDbTransaction? transaction = null, CancellationToken cancellationToken = default);
     Task<string> GeneratePurchaseNumberAsync(System.Data.IDbTransaction? transaction, CancellationToken cancellationToken = default);
     Task<Guid> CreatePurchaseAsync(Purchase purchase, System.Data.IDbTransaction? transaction, CancellationToken cancellationToken = default);
+    Task<string?> GetSupplierNameAsync(Guid supplierId, System.Data.IDbTransaction? transaction = null, CancellationToken cancellationToken = default);
 }
 
 public interface IInventoryRepository
