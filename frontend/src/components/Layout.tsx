@@ -116,6 +116,14 @@ function Layout() {
     const isGlobalAdmin = user?.roles?.includes(Roles.GlobalAdmin);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [open, setOpen] = useState(true);
+
+    const activeNavGroups = isGlobalAdmin ? globalAdminNavGroups : shopNavGroups;
+
+    const canAccess = (item: NavItem) => {
+        if (!item.permission) return true;
+        if (isGlobalAdmin) return true;
+        return user?.permissions?.includes(item.permission) ?? false;
+    };
     // Responsive drawer handling
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
