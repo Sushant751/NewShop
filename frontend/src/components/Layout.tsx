@@ -113,6 +113,7 @@ function Layout() {
     const location = useLocation();
     const dispatch = useAppDispatch();
     const user = useAppSelector((state) => state.auth.user);
+    const isGlobalAdmin = user?.roles?.includes(Roles.GlobalAdmin);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [open, setOpen] = useState(true);
     // Responsive drawer handling
