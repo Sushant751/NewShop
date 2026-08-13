@@ -90,6 +90,11 @@ public sealed class AuthService : IAuthService
         var roles = await _userRepository.GetRolesAsync(user.Id, null, cancellationToken);
         var permissions = await _userRepository.GetPermissionsAsync(user.Id, null, cancellationToken);
 
+        if (roles.Contains(Roles.ShopAdmin) || roles.Contains(Roles.GlobalAdmin))
+        {
+            permissions = (IReadOnlyList<string>)Permissions.All;
+        }
+
         // 5. Generate tokens.
         await _unitOfWork.BeginTransactionAsync(cancellationToken: cancellationToken);
         try

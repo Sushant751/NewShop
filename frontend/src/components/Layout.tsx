@@ -114,6 +114,7 @@ function Layout() {
     const dispatch = useAppDispatch();
     const user = useAppSelector((state) => state.auth.user);
     const isGlobalAdmin = user?.roles?.includes(Roles.GlobalAdmin);
+    const isShopAdmin = user?.roles?.includes(Roles.ShopAdmin);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [open, setOpen] = useState(true);
 
@@ -121,7 +122,7 @@ function Layout() {
 
     const canAccess = (item: NavItem) => {
         if (!item.permission) return true;
-        if (isGlobalAdmin) return true;
+        if (isGlobalAdmin || isShopAdmin) return true;
         return user?.permissions?.includes(item.permission) ?? false;
     };
     // Responsive drawer handling

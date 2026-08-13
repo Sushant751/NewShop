@@ -43,9 +43,10 @@ function ProductsPage() {
     const [deleteId, setDeleteId] = useState<string | null>(null);
 
     const isGlobalAdmin = user?.roles?.includes(Roles.GlobalAdmin);
-    const canCreate = isGlobalAdmin || user?.permissions?.includes(Permissions.ProductsCreate) || false;
-    const canEdit = isGlobalAdmin || user?.permissions?.includes(Permissions.ProductsEdit) || false;
-    const canDelete = isGlobalAdmin || user?.permissions?.includes(Permissions.ProductsDelete) || false;
+    const isShopAdmin = user?.roles?.includes(Roles.ShopAdmin);
+    const canCreate = isGlobalAdmin || isShopAdmin || user?.permissions?.includes(Permissions.ProductsCreate) || false;
+    const canEdit = isGlobalAdmin || isShopAdmin || user?.permissions?.includes(Permissions.ProductsEdit) || false;
+    const canDelete = isGlobalAdmin || isShopAdmin || user?.permissions?.includes(Permissions.ProductsDelete) || false;
 
     const { data, isLoading, error } = useQuery(
         ['products', paginationModel.page, paginationModel.pageSize, search],
