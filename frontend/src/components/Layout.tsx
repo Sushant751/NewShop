@@ -109,8 +109,11 @@ const shopNavGroups: NavGroup[] = [
 ];
 
 function Layout() {
-// duplicate imports removed - moved to top of file
-
+    const navigate = useNavigate();
+    const location = useLocation();
+    const dispatch = useAppDispatch();
+    const user = useAppSelector((state) => state.auth.user);
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [open, setOpen] = useState(true);
     // Responsive drawer handling
     const theme = useTheme();
