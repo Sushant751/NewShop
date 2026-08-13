@@ -207,9 +207,10 @@ function LoginPage() {
                         <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
                             <Chip label="Admin" size="small" variant="outlined" onClick={() => handleDemoLogin('admin@billingsystem.com', 'Admin@123')} sx={{ fontSize: '0.75rem', cursor: 'pointer', '&:hover': { bgcolor: '#f4f6f8' } }} />
                         </Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, flexWrap: 'wrap' }}>
                             <Chip label="Shop Admin" size="small" variant="outlined" onClick={() => handleDemoLogin('shopadmin@demo.com', 'ShopAdmin@123')} sx={{ fontSize: '0.75rem', cursor: 'pointer', '&:hover': { bgcolor: '#f4f6f8' } }} />
                             <Chip label="Clerk" size="small" variant="outlined" onClick={() => handleDemoLogin('clerk@demo.com', 'Clerk@123')} sx={{ fontSize: '0.75rem', cursor: 'pointer', '&:hover': { bgcolor: '#f4f6f8' } }} />
+                            <Chip label="Cashier" size="small" variant="outlined" onClick={() => handleDemoLogin('cashier@demo.com', 'Cashier@123')} sx={{ fontSize: '0.75rem', cursor: 'pointer', '&:hover': { bgcolor: '#f4f6f8' } }} />
                         </Box>
                     </Box>
                 </Box>

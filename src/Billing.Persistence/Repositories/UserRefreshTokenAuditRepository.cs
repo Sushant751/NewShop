@@ -44,9 +44,9 @@ public sealed class UserRepository : GenericRepository<User>, IUserRepository
         const string sql = @"
             SELECT DISTINCT p.Name
             FROM UserRoles ur
-            INNER JOIN RolePermissions rp ON rp.RoleId = ur.RoleId AND rp.TenantId = ur.TenantId
+            INNER JOIN RolePermissions rp ON rp.RoleId = ur.RoleId
             INNER JOIN Permissions p ON p.Id = rp.PermissionId
-            WHERE ur.TenantId = @TenantId AND ur.UserId = @UserId AND ur.IsDeleted = 0
+            WHERE ur.UserId = @UserId AND ur.IsDeleted = 0
               AND rp.IsDeleted = 0 AND p.IsDeleted = 0;";
         var connection = await GetConnectionAsync(transaction, cancellationToken);
         var result = await connection.QueryAsync<string>(
@@ -60,8 +60,8 @@ public sealed class UserRepository : GenericRepository<User>, IUserRepository
         const string sql = @"
             SELECT r.Name
             FROM UserRoles ur
-            INNER JOIN Roles r ON r.Id = ur.RoleId AND r.TenantId = ur.TenantId
-            WHERE ur.TenantId = @TenantId AND ur.UserId = @UserId AND ur.IsDeleted = 0 AND r.IsDeleted = 0;";
+            INNER JOIN Roles r ON r.Id = ur.RoleId
+            WHERE ur.UserId = @UserId AND ur.IsDeleted = 0 AND r.IsDeleted = 0;";
         var connection = await GetConnectionAsync(transaction, cancellationToken);
         var result = await connection.QueryAsync<string>(
             new CommandDefinition(sql, new { TenantId = tenantId, UserId = userId }, transaction, cancellationToken: cancellationToken));
@@ -70,7 +70,12 @@ public sealed class UserRepository : GenericRepository<User>, IUserRepository
 
     public async Task<Guid> GetRoleIdByNameAsync(string roleName, Guid tenantId, IDbTransaction? transaction = null, CancellationToken cancellationToken = default)
     {
-        const string sql = "SELECT Id FROM Roles WHERE Name = @RoleName AND TenantId = @TenantId AND IsDeleted = 0";
+        const string sql = @"
+            SELECT TOP 1 Id FROM Roles 
+            WHERE (Name = @RoleName OR (Name = 'Cashier' AND @RoleName = 'Clerk') OR (Name = 'Clerk' AND @RoleName = 'Cashier'))
+              AND (TenantId = @TenantId OR IsSystemRole = 1) 
+              AND IsDeleted = 0
+            ORDER BY IsSystemRole DESC;";
         var connection = await GetConnectionAsync(transaction, cancellationToken);
         return await connection.QueryFirstOrDefaultAsync<Guid>(
             new CommandDefinition(sql, new { RoleName = roleName, TenantId = tenantId }, transaction, cancellationToken: cancellationToken));

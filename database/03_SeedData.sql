@@ -46,6 +46,7 @@ DECLARE @RoleStaff         UNIQUEIDENTIFIER = 'D4444444-0000-0000-0000-000000000
 DECLARE @UserAdmin         UNIQUEIDENTIFIER = 'E5555555-0000-0000-0000-000000000001';
 DECLARE @UserShopAdmin     UNIQUEIDENTIFIER = 'E5555555-0000-0000-0000-000000000002';
 DECLARE @UserClerk         UNIQUEIDENTIFIER = 'E5555555-0000-0000-0000-000000000003';
+DECLARE @UserCashier       UNIQUEIDENTIFIER = 'E5555555-0000-0000-0000-000000000004';
 
 -- Permissions (19 total)
 DECLARE @PermProductsView        UNIQUEIDENTIFIER = 'F6666666-0000-0000-0000-000000000001';
@@ -508,6 +509,35 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE Id = @UserClerk)
 IF NOT EXISTS (SELECT 1 FROM dbo.UserRoles WHERE TenantId = @TenantDemo AND UserId = @UserClerk AND RoleId = @RoleCashier)
     INSERT INTO dbo.UserRoles (TenantId, UserId, RoleId, CreatedDate, IsDeleted)
     VALUES (@TenantDemo, @UserClerk, @RoleCashier, SYSUTCDATETIME(), 0);
+
+/*===========================================================================
+ *  8d. Cashier User
+ *      Email: cashier@demo.com   Password: Cashier@123
+ *==========================================================================*/
+IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE Id = @UserCashier)
+    INSERT INTO dbo.Users
+    (
+        Id, TenantId, UserName, Email, NormalizedEmail, FullName, PhoneNumber,
+        PasswordHash, SecurityStamp, ConcurrencyStamp,
+        EmailConfirmed, PhoneNumberConfirmed, TwoFactorEnabled,
+        LockoutEnabled, LockoutEnd, AccessFailedCount,
+        IsActive, ShopId, LastLoginAt, LastLoginIp, DeviceInfo,
+        CreatedDate, IsDeleted
+    )
+    VALUES
+    (
+        @UserCashier, @TenantDemo,
+        N'cashier@demo.com', N'cashier@demo.com', N'CASHIER@DEMO.COM',
+        N'Store Cashier', N'+1-555-0404',
+        @ClerkPasswordHash,
+        @SecurityStamp, @ConcurrencyStamp,
+        1, 0, 0, 1, NULL, 0, 1, @ShopMain, NULL, NULL, NULL,
+        SYSUTCDATETIME(), 0
+    );
+
+IF NOT EXISTS (SELECT 1 FROM dbo.UserRoles WHERE TenantId = @TenantDemo AND UserId = @UserCashier AND RoleId = @RoleCashier)
+    INSERT INTO dbo.UserRoles (TenantId, UserId, RoleId, CreatedDate, IsDeleted)
+    VALUES (@TenantDemo, @UserCashier, @RoleCashier, SYSUTCDATETIME(), 0);
 
 /*===========================================================================
  *  9.  Default tenant settings
