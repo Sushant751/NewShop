@@ -137,6 +137,17 @@ try
 
     app.MapControllers();
 
+    // Root endpoint for deployment health checks & status
+    app.MapGet("/", () => Results.Ok(new
+    {
+        service = "NewShop ERP & POS API",
+        status = "Healthy",
+        version = "v1",
+        documentation = "/swagger",
+        health = "/health",
+        timestamp = DateTime.UtcNow
+    }));
+
     // Health check endpoint
     app.MapGet("/health", () => Results.Ok(new { status = "Healthy", timestamp = DateTime.UtcNow }));
 
