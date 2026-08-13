@@ -168,7 +168,7 @@ BEGIN
         si.ProductId,
         p.Name                          AS ProductName,
         SUM(si.Quantity)                AS QuantitySold,
-        SUM(si.LineTotal)               AS Revenue
+        SUM(si.LineTotal - si.TaxAmount) AS Revenue
     FROM dbo.SaleItems si
     INNER JOIN dbo.Sales s ON s.Id = si.SaleId AND s.TenantId = si.TenantId
     INNER JOIN dbo.Products p ON p.Id = si.ProductId

@@ -41,6 +41,8 @@ export default function StaffPage() {
 
     const { data: users, isLoading } = useQuery('users', usersApi.list);
 
+    const filteredUsers = (users || []).filter(u => isGlobalAdmin || (!u.roles?.includes(Roles.GlobalAdmin) && u.email !== 'admin@billingsystem.com'));
+
     const createMutation = useMutation(usersApi.create, {
         onSuccess: () => {
             queryClient.invalidateQueries('users');
@@ -151,7 +153,7 @@ export default function StaffPage() {
             <Card sx={{ borderRadius: 2, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
                 <CardContent sx={{ p: 0 }}>
                     <DataGrid
-                        rows={users || []}
+                        rows={filteredUsers}
                         columns={columns}
                         loading={isLoading}
                         autoHeight

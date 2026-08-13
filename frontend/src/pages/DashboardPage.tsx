@@ -219,8 +219,8 @@ function DashboardPage() {
         if (!data) return;
 
         if (isGlobalAdmin && shopMetrics.length > 0) {
-            // Export Shop-wise breakdown for Global Admin
-            const headers = ['Shop Name', 'Slug', 'Plan', 'Status', 'Staff Count', 'Products Count', 'Bills Generated', 'Paid Bills', 'Cancelled Bills', 'Total Revenue (INR)', 'Cancelled Amount (INR)', 'Outstanding Due (INR)'];
+            // Export Shop-wise breakdown for Global Admin (Platform Administration)
+            const headers = ['Shop Name', 'Slug', 'Plan', 'Status', 'Staff Count', 'Products Count'];
             const rows = shopMetrics.map((s) => [
                 `"${s.tenantName}"`,
                 s.tenantSlug,
@@ -228,19 +228,13 @@ function DashboardPage() {
                 s.status,
                 s.userCount,
                 s.productCount,
-                s.totalBillsGenerated,
-                s.paidBillsCount,
-                s.cancelledBillsCount,
-                s.totalRevenue.toFixed(2),
-                s.cancelledAmount.toFixed(2),
-                s.outstandingAmount.toFixed(2),
             ]);
             const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Shop_Performance_Report_${from}_to_${to}.csv`;
+            a.download = `Shop_Network_Report_${from}_to_${to}.csv`;
             a.click();
             URL.revokeObjectURL(url);
             return;
@@ -348,74 +342,38 @@ function DashboardPage() {
             {/* ========================================================================= */}
             {isGlobalAdmin ? (
                 <>
-                    {/* Row 1: Platform High-Level Summary Stat Cards */}
+                    {/* Row 1: Platform Administrative Stat Cards */}
                     <Grid container spacing={2.5} sx={{ mb: 3.5 }}>
-                        <Grid item xs={12} sm={6} md={4} lg={2}>
+                        <Grid item xs={12} sm={6} md={4}>
                             <MantisStatCard
-                                title="Active Shops"
+                                title="Active Shops / Tenants"
                                 value={String(data?.totalShopsCount || shopMetrics.length || 0)}
                                 pctChange={null}
-                                subtitle="Registered Branches"
+                                subtitle="Registered System Tenants"
                                 icon={<StorefrontIcon />}
                                 color="#4680ff"
                                 bgTint="#e8f0ff"
                             />
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={4} lg={2}>
+                        <Grid item xs={12} sm={6} md={4}>
                             <MantisStatCard
-                                title="Total Staff"
+                                title="Total Staff Users"
                                 value={String(data?.totalUsersCount || 0)}
                                 pctChange={null}
-                                subtitle="Across All Shops"
+                                subtitle="Allocated Across All Shops"
                                 icon={<PeopleIcon />}
                                 color="#13c2c2"
                                 bgTint="#e6fffb"
                             />
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={4} lg={2.5}>
+                        <Grid item xs={12} sm={6} md={4}>
                             <MantisStatCard
-                                title="Platform Revenue"
-                                value={formatCurrency(data?.totalSales || 0)}
-                                pctChange={pctDiff(data?.totalSales || 0, prevData?.totalSales || 0)}
-                                subtitle="Gross Sales (GMV)"
-                                icon={<AttachMoneyIcon />}
-                                color="#52c41a"
-                                bgTint="#f6ffed"
-                            />
-                        </Grid>
-
-                        <Grid item xs={12} sm={6} md={4} lg={2}>
-                            <MantisStatCard
-                                title="Bills Generated"
-                                value={String(data?.salesCount || 0)}
-                                pctChange={pctDiff(data?.salesCount || 0, prevData?.salesCount || 0)}
-                                subtitle="Completed Invoices"
-                                icon={<ReceiptLongIcon />}
-                                color="#722ed1"
-                                bgTint="#f9f0ff"
-                            />
-                        </Grid>
-
-                        <Grid item xs={12} sm={6} md={4} lg={2}>
-                            <MantisStatCard
-                                title="Cancelled Bills"
-                                value={String(data?.totalCancelledBillsCount || 0)}
-                                pctChange={null}
-                                subtitle={data?.totalCancelledAmount ? formatCurrency(data.totalCancelledAmount) : '₹0.00'}
-                                icon={<CancelOutlinedIcon />}
-                                color="#ff4d4f"
-                                bgTint="#fff2f0"
-                            />
-                        </Grid>
-
-                        <Grid item xs={12} sm={6} md={4} lg={1.5}>
-                            <MantisStatCard
-                                title="Products"
+                                title="Catalog Product SKUs"
                                 value={String(data?.productCount || 0)}
                                 pctChange={null}
-                                subtitle="Network SKUs"
+                                subtitle="Total System Inventory SKUs"
                                 icon={<InventoryIcon />}
                                 color="#fa8c16"
                                 bgTint="#fff7e6"
@@ -423,93 +381,16 @@ function DashboardPage() {
                         </Grid>
                     </Grid>
 
-                    {/* Row 2: Visual Comparison Charts */}
-                    <Grid container spacing={2.5} sx={{ mb: 3.5 }}>
-                        {/* Chart 1: Shop-by-Shop Revenue Comparison */}
-                        <Grid item xs={12} md={7}>
-                            <Card sx={{ borderRadius: 2.5, border: '1px solid #e6ebf1', p: 1 }}>
-                                <CardContent>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                        <Box>
-                                            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                                                Revenue by Shop / Branch
-                                            </Typography>
-                                            <Typography variant="caption" color="textSecondary">
-                                                Total sales revenue (₹) collected per shop
-                                            </Typography>
-                                        </Box>
-                                        <Chip label="Shop Revenue" size="small" sx={{ bgcolor: '#e8f0ff', color: '#4680ff', fontWeight: 600 }} />
-                                    </Box>
-
-                                    <ResponsiveContainer width="100%" height={320}>
-                                        <BarChart data={shopRevenueChartData}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                            <XAxis dataKey="name" fontSize={11} stroke="#8c8c8c" />
-                                            <YAxis fontSize={11} stroke="#8c8c8c" />
-                                            <RechartsTooltip
-                                                formatter={(value: any) => formatCurrency(Number(value))}
-                                                contentStyle={{
-                                                    backgroundColor: '#ffffff',
-                                                    borderRadius: '8px',
-                                                    border: '1px solid #e6ebf1',
-                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                                                }}
-                                            />
-                                            <Bar dataKey="revenue" fill="#4680ff" radius={[6, 6, 0, 0]} name="Revenue (₹)" />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </CardContent>
-                            </Card>
-                        </Grid>
-
-                        {/* Chart 2: Bills Generated vs Cancelled per Shop */}
-                        <Grid item xs={12} md={5}>
-                            <Card sx={{ borderRadius: 2.5, border: '1px solid #e6ebf1', p: 1 }}>
-                                <CardContent>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                        <Box>
-                                            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                                                Bill Status by Shop
-                                            </Typography>
-                                            <Typography variant="caption" color="textSecondary">
-                                                Completed vs Cancelled Invoices
-                                            </Typography>
-                                        </Box>
-                                        <Chip label="Bill Ratio" size="small" sx={{ bgcolor: '#f6ffed', color: '#52c41a', fontWeight: 600 }} />
-                                    </Box>
-
-                                    <ResponsiveContainer width="100%" height={320}>
-                                        <BarChart data={shopRevenueChartData}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                            <XAxis dataKey="name" fontSize={11} stroke="#8c8c8c" />
-                                            <YAxis fontSize={11} stroke="#8c8c8c" />
-                                            <RechartsTooltip
-                                                contentStyle={{
-                                                    backgroundColor: '#ffffff',
-                                                    borderRadius: '8px',
-                                                    border: '1px solid #e6ebf1',
-                                                }}
-                                            />
-                                            <Legend />
-                                            <Bar dataKey="paidBills" fill="#52c41a" stackId="a" name="Completed Bills" />
-                                            <Bar dataKey="cancelledBills" fill="#ff4d4f" stackId="a" name="Cancelled Bills" radius={[6, 6, 0, 0]} />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                    </Grid>
-
-                    {/* Row 3: Comprehensive Shop-Wise Operations Breakdown Table */}
+                    {/* Row 2: Comprehensive Shop Network & Staff Matrix Table */}
                     <Card sx={{ borderRadius: 2.5, border: '1px solid #e6ebf1' }}>
                         <CardContent sx={{ p: 3 }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
                                 <Box>
                                     <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                                        Shop-Wise Operations & Performance Matrix
+                                        Platform Tenants & Staff Allocation Matrix
                                     </Typography>
                                     <Typography variant="body2" color="textSecondary">
-                                        Staff allocation, bill volumes, cancellation rates, and revenue breakdown per shop
+                                        Registered shop branches, active staff allocations, product inventory counts, and status
                                     </Typography>
                                 </Box>
                                 <Button
@@ -529,12 +410,8 @@ function DashboardPage() {
                                         <TableRow sx={{ bgcolor: '#fafafa' }}>
                                             <TableCell sx={{ fontWeight: 700 }}>Shop / Branch</TableCell>
                                             <TableCell align="center" sx={{ fontWeight: 700 }}>Staff Users</TableCell>
-                                            <TableCell align="center" sx={{ fontWeight: 700 }}>Products</TableCell>
-                                            <TableCell align="center" sx={{ fontWeight: 700 }}>Total Bills</TableCell>
-                                            <TableCell align="center" sx={{ fontWeight: 700 }}>Completed Bills</TableCell>
-                                            <TableCell align="center" sx={{ fontWeight: 700 }}>Cancelled Bills</TableCell>
-                                            <TableCell align="right" sx={{ fontWeight: 700 }}>Total Revenue</TableCell>
-                                            <TableCell align="right" sx={{ fontWeight: 700 }}>Outstanding</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 700 }}>Product Catalog</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 700 }}>Subscription Plan</TableCell>
                                             <TableCell align="center" sx={{ fontWeight: 700 }}>Status</TableCell>
                                             <TableCell align="center" sx={{ fontWeight: 700 }}>Action</TableCell>
                                         </TableRow>
@@ -542,7 +419,7 @@ function DashboardPage() {
                                     <TableBody>
                                         {shopMetrics.length === 0 ? (
                                             <TableRow>
-                                                <TableCell colSpan={10} align="center" sx={{ py: 3, color: '#8c8c8c' }}>
+                                                <TableCell colSpan={6} align="center" sx={{ py: 3, color: '#8c8c8c' }}>
                                                     No shops registered yet.
                                                 </TableCell>
                                             </TableRow>
@@ -554,16 +431,9 @@ function DashboardPage() {
                                                             <Typography variant="body2" sx={{ fontWeight: 700, color: '#1d2630' }}>
                                                                 {shop.tenantName}
                                                             </Typography>
-                                                            <Box sx={{ display: 'flex', gap: 0.8, mt: 0.3, alignItems: 'center' }}>
-                                                                <Typography variant="caption" sx={{ color: '#8c8c8c' }}>
-                                                                    {shop.tenantSlug}
-                                                                </Typography>
-                                                                <Chip
-                                                                    label={shop.plan || 'Standard'}
-                                                                    size="small"
-                                                                    sx={{ height: 18, fontSize: '0.625rem', bgcolor: '#f0f5ff', color: '#2f54eb', fontWeight: 600 }}
-                                                                />
-                                                            </Box>
+                                                            <Typography variant="caption" sx={{ color: '#8c8c8c' }}>
+                                                                {shop.tenantSlug}
+                                                            </Typography>
                                                         </Box>
                                                     </TableCell>
 
@@ -577,41 +447,15 @@ function DashboardPage() {
                                                     </TableCell>
 
                                                     <TableCell align="center" sx={{ fontWeight: 600 }}>
-                                                        {shop.productCount}
-                                                    </TableCell>
-
-                                                    <TableCell align="center" sx={{ fontWeight: 600 }}>
-                                                        {shop.totalBillsGenerated}
+                                                        {shop.productCount} SKUs
                                                     </TableCell>
 
                                                     <TableCell align="center">
                                                         <Chip
-                                                            icon={<CheckCircleOutlineIcon sx={{ fontSize: '14px !important' }} />}
-                                                            label={String(shop.paidBillsCount)}
+                                                            label={shop.plan || 'Standard'}
                                                             size="small"
-                                                            sx={{ bgcolor: '#f6ffed', color: '#52c41a', fontWeight: 700 }}
+                                                            sx={{ height: 20, fontSize: '0.7rem', bgcolor: '#f0f5ff', color: '#2f54eb', fontWeight: 600 }}
                                                         />
-                                                    </TableCell>
-
-                                                    <TableCell align="center">
-                                                        {shop.cancelledBillsCount > 0 ? (
-                                                            <Chip
-                                                                icon={<CancelOutlinedIcon sx={{ fontSize: '14px !important' }} />}
-                                                                label={`${shop.cancelledBillsCount} (${formatCurrency(shop.cancelledAmount)})`}
-                                                                size="small"
-                                                                sx={{ bgcolor: '#fff2f0', color: '#ff4d4f', fontWeight: 700 }}
-                                                            />
-                                                        ) : (
-                                                            <Typography variant="body2" sx={{ color: '#8c8c8c' }}>0</Typography>
-                                                        )}
-                                                    </TableCell>
-
-                                                    <TableCell align="right" sx={{ fontWeight: 700, color: '#4680ff', fontSize: '0.95rem' }}>
-                                                        {formatCurrency(shop.totalRevenue)}
-                                                    </TableCell>
-
-                                                    <TableCell align="right" sx={{ fontWeight: 600, color: shop.outstandingAmount > 0 ? '#fa8c16' : '#5b6b79' }}>
-                                                        {formatCurrency(shop.outstandingAmount)}
                                                     </TableCell>
 
                                                     <TableCell align="center">

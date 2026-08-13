@@ -53,6 +53,10 @@ public sealed class GetUsersHandler : IRequestHandler<GetUsersQuery, Result<IRea
             foreach (var user in users)
             {
                 var roles = await _repository.GetRolesAsync(user.Id, null, cancellationToken);
+                // Shop admin should not see GlobalAdmin users or system admin account
+                if (roles.Contains("GlobalAdmin") || string.Equals(user.Email, "admin@billingsystem.com", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
                 dtos.Add(new UserDto(
                     user.Id,
                     user.UserName,
