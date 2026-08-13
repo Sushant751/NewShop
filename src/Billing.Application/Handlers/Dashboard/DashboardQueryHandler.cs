@@ -29,7 +29,8 @@ public sealed class GetDashboardHandler : IRequestHandler<GetDashboardQuery, Res
         var to = request.To.HasValue ? request.To.Value.Date.AddDays(1) : DateTime.UtcNow;
         var from = request.From?.Date ?? to.Date.AddDays(-30);
 
-        var prefix = request.IsGlobalAdmin ? "dashboard:global" : CacheKeys.Dashboard(_tenantContext.TenantId!.Value);
+        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
+        var prefix = request.IsGlobalAdmin ? "dashboard:global" : CacheKeys.Dashboard(tenantId);
         var cacheKey = $"{prefix}:{from:yyyyMMdd}:{to:yyyyMMdd}";
         var cached = await _cache.GetAsync<DashboardDto>(cacheKey, cancellationToken);
         if (cached is not null) return Result<DashboardDto>.Ok(cached);

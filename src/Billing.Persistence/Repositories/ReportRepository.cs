@@ -86,7 +86,7 @@ public sealed class ReportRepository : IReportRepository
                 ISNULL((SELECT COUNT(*) FROM Products WHERE TenantId = @TenantId AND IsDeleted = 0), 0) AS ProductCount,
                 ISNULL((SELECT COUNT(*) FROM Customers WHERE TenantId = @TenantId AND IsDeleted = 0), 0) AS CustomerCount,
                 ISNULL((SELECT COUNT(*) FROM Products WHERE TenantId = @TenantId AND IsDeleted = 0 AND IsActive = 1 AND CurrentStock <= ReorderLevel), 0) AS LowStockCount,
-                ISNULL((SELECT COUNT(*) FROM Shops WHERE TenantId = @TenantId AND IsDeleted = 0), 0) AS TotalShopsCount,
+                ISNULL((SELECT COUNT(*) FROM Tenants WHERE Id = @TenantId AND IsDeleted = 0), 0) AS TotalShopsCount,
                 ISNULL((SELECT COUNT(*) FROM Users WHERE TenantId = @TenantId AND IsDeleted = 0), 0) AS TotalUsersCount,
                 ISNULL((SELECT COUNT(*) FROM Sales WHERE TenantId = @TenantId AND IsDeleted = 0 AND Status = 4 AND SaleDate >= @From AND SaleDate < @To), 0) AS TotalCancelledBillsCount,
                 ISNULL((SELECT SUM(GrandTotal) FROM Sales WHERE TenantId = @TenantId AND IsDeleted = 0 AND Status = 4 AND SaleDate >= @From AND SaleDate < @To), 0) AS TotalCancelledAmount;";
