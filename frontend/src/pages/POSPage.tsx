@@ -93,6 +93,14 @@ function POSPage() {
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.Cash);
     const [paymentAmount, setPaymentAmount] = useState(0);
     const [soundEnabled, setSoundEnabled] = useState(true);
+    const [quickAddOpen, setQuickAddOpen] = useState(false);
+    const [quickAddData, setQuickAddData] = useState({
+        name: '',
+        barcode: '',
+        sellingPrice: 0,
+        costPrice: 0,
+        openingStock: 10,
+    });
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
         open: false,
         message: '',
@@ -104,6 +112,27 @@ function POSPage() {
         ['product-search', searchTerm],
         () => productsApi.search(searchTerm, 20),
         { enabled: searchTerm.length >= 2 },
+    );
+
+    // Quick Add Product mutation when scanning an unlisted barcode
+    const quickAddMutation = useMutation(
+        (data: CreateProductRequest) => productsApi.create(data),
+        {
+            onSuccess: (newProduct) => {
+                queryClient.invalidateQueries('products');
+                addToCart(newProduct);
+                setQuickAddOpen(false);
+                if (soundEnabled) playBeep('success');
+                setSnackbar({
+                    open: true,
+                    message: `Product "${newProduct.name}" created and added to sale!`,
+                    severity: 'success',
+                });
+            },
+            onError: (err: Error) => {
+                setSnackbar({ open: true, message: err.message, severity: 'error' });
+            },
+        },
     );
 
     // Customer search
@@ -188,9 +217,17 @@ function POSPage() {
                 setSearchTerm('');
             } else {
                 if (soundEnabled) playBeep('error');
+                setQuickAddData({
+                    name: '',
+                    barcode: cleanCode,
+                    sellingPrice: 0,
+                    costPrice: 0,
+                    openingStock: 10,
+                });
+                setQuickAddOpen(true);
                 setSnackbar({
                     open: true,
-                    message: `Barcode/SKU "${cleanCode}" not found in inventory!`,
+                    message: `Barcode "${cleanCode}" not found in inventory! Quick add enabled.`,
                     severity: 'error',
                 });
             }
@@ -556,6 +593,81 @@ function POSPage() {
                         startIcon={createSaleMutation.isLoading ? <CircularProgress size={20} /> : undefined}
                     >
                         Complete Sale
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Quick Add Product Dialog when scanned barcode is missing */}
+            <Dialog open={quickAddOpen} onClose={() => setQuickAddOpen(false)} maxWidth="xs" fullWidth>
+                <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <QrCodeScannerIcon color="primary" /> Quick Add Product
+                </DialogTitle>
+                <DialogContent>
+                    <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <Alert severity="info" size="small">
+                            Barcode <strong>{quickAddData.barcode}</strong> is not in inventory. Enter details below to save and add to current sale!
+                        </Alert>
+                        <TextField
+                            label="Barcode"
+                            value={quickAddData.barcode}
+                            disabled
+                            fullWidth
+                            size="small"
+                        />
+                        <TextField
+                            label="Product Name *"
+                            value={quickAddData.name}
+                            onChange={(e) => setQuickAddData({ ...quickAddData, name: e.target.value })}
+                            required
+                            fullWidth
+                            autoFocus
+                        />
+                        <TextField
+                            label="Selling Price (₹) *"
+                            type="number"
+                            value={quickAddData.sellingPrice || ''}
+                            onChange={(e) => setQuickAddData({ ...quickAddData, sellingPrice: parseFloat(e.target.value) || 0 })}
+                            InputProps={{ startAdornment: '₹' }}
+                            fullWidth
+                        />
+                        <TextField
+                            label="Cost Price (₹)"
+                            type="number"
+                            value={quickAddData.costPrice || ''}
+                            onChange={(e) => setQuickAddData({ ...quickAddData, costPrice: parseFloat(e.target.value) || 0 })}
+                            InputProps={{ startAdornment: '₹' }}
+                            fullWidth
+                        />
+                        <TextField
+                            label="Opening Stock"
+                            type="number"
+                            value={quickAddData.openingStock}
+                            onChange={(e) => setQuickAddData({ ...quickAddData, openingStock: parseFloat(e.target.value) || 0 })}
+                            fullWidth
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setQuickAddOpen(false)}>Cancel</Button>
+                    <Button
+                        variant="contained"
+                        disabled={!quickAddData.name.trim() || quickAddData.sellingPrice <= 0 || quickAddMutation.isLoading}
+                        onClick={() => {
+                            quickAddMutation.mutate({
+                                name: quickAddData.name,
+                                barcode: quickAddData.barcode,
+                                sellingPrice: quickAddData.sellingPrice,
+                                costPrice: quickAddData.costPrice,
+                                openingStock: quickAddData.openingStock,
+                                isTaxable: true,
+                                taxRate: 0,
+                                trackInventory: true,
+                                allowSaleWithoutStock: true,
+                            });
+                        }}
+                        startIcon={quickAddMutation.isLoading ? <CircularProgress size={18} /> : undefined}
+                    >
+                        Save & Add to Sale
                     </Button>
                 </DialogActions>
             </Dialog>

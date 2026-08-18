@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import {
@@ -16,10 +16,48 @@ import {
     Divider,
     InputAdornment,
     Tooltip,
+    Chip,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import WarningIcon from '@mui/icons-material/Warning';
 import { productsApi } from '../api/endpoints';
-import type { CreateProductRequest, UpdateProductRequest } from '../types';
+import type { CreateProductRequest, UpdateProductRequest, ProductDto } from '../types';
+
+// Web Audio API Beep Synthesizer for scanner feedback
+const playBeep = (type: 'success' | 'error' = 'success') => {
+    try {
+        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'success') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1400, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1800, ctx.currentTime + 0.08);
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.08);
+        } else {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(400, ctx.currentTime);
+            osc.frequency.setValueAtTime(250, ctx.currentTime + 0.12);
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.12);
+        }
+    } catch {
+        // Audio synthesis fallback
+    }
+};
 
 function ProductFormPage() {
     const navigate = useNavigate();
@@ -48,12 +86,95 @@ function ProductFormPage() {
         isActive: true,
     });
     const [error, setError] = useState('');
+    const [barcodeStatus, setBarcodeStatus] = useState<{
+        checking: boolean;
+        message: string;
+        severity: 'success' | 'warning' | 'error' | null;
+        existingProduct?: ProductDto;
+    } | null>(null);
 
     const { data: product, isLoading } = useQuery(
         ['product', id],
         () => productsApi.getById(id!),
         { enabled: isEdit },
     );
+
+    const checkBarcodeAvailability = useCallback(async (code: string) => {
+        const cleanCode = code.trim();
+        if (!cleanCode) {
+            setBarcodeStatus(null);
+            return;
+        }
+
+        setBarcodeStatus({ checking: true, message: 'Checking barcode availability...', severity: null });
+
+        try {
+            const results = await productsApi.search(cleanCode, 10);
+            const match = results?.find(
+                (p) => (p.barcode?.toLowerCase() === cleanCode.toLowerCase() || p.sku?.toLowerCase() === cleanCode.toLowerCase()) && p.id !== id
+            );
+
+            if (match) {
+                playBeep('error');
+                setBarcodeStatus({
+                    checking: false,
+                    message: `Barcode "${cleanCode}" is ALREADY registered to "${match.name}" (SKU: ${match.sku || 'N/A'}, Price: ₹${match.sellingPrice.toFixed(2)})`,
+                    severity: 'warning',
+                    existingProduct: match,
+                });
+            } else {
+                playBeep('success');
+                setBarcodeStatus({
+                    checking: false,
+                    message: `Barcode "${cleanCode}" is available!`,
+                    severity: 'success',
+                });
+            }
+        } catch {
+            setBarcodeStatus({
+                checking: false,
+                message: 'Failed to verify barcode availability.',
+                severity: 'error',
+            });
+        }
+    }, [id]);
+
+    // Axevia 2D Barcode Scanner listener for Product Form
+    useEffect(() => {
+        let buffer = '';
+        let lastKeyTime = Date.now();
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const target = e.target as HTMLElement;
+            const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+
+            if (e.key === 'Enter') {
+                if (buffer.length >= 2) {
+                    e.preventDefault();
+                    const scanned = buffer.trim();
+                    buffer = '';
+                    setFormData((prev) => ({ ...prev, barcode: scanned }));
+                    checkBarcodeAvailability(scanned);
+                }
+                return;
+            }
+
+            if (e.key.length === 1) {
+                const now = Date.now();
+                const timeDiff = now - lastKeyTime;
+                lastKeyTime = now;
+
+                if (timeDiff < 50 || !isInput) {
+                    buffer += e.key;
+                } else {
+                    buffer = e.key;
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [checkBarcodeAvailability]);
 
     useEffect(() => {
         if (product) {
@@ -180,16 +301,46 @@ function ProductFormPage() {
 
     return (
         <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/products')} sx={{ mr: 2 }}>
-                    Back
-                </Button>
-                <Typography variant="h4">{isEdit ? 'Edit Product' : 'New Product'}</Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/products')} sx={{ mr: 2 }}>
+                        Back
+                    </Button>
+                    <Typography variant="h4">{isEdit ? 'Edit Product' : 'New Product'}</Typography>
+                </Box>
+
+                <Chip
+                    icon={<QrCodeScannerIcon sx={{ color: '#2e7d32 !important' }} />}
+                    label="Axevia 2D Scanner Active"
+                    color="success"
+                    variant="outlined"
+                    sx={{ fontWeight: 600, bgcolor: 'rgba(46, 125, 50, 0.08)', borderColor: '#2e7d32' }}
+                />
             </Box>
 
             {error && (
                 <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
                     {error}
+                </Alert>
+            )}
+
+            {barcodeStatus && barcodeStatus.severity && (
+                <Alert
+                    severity={barcodeStatus.severity}
+                    sx={{ mb: 2 }}
+                    action={
+                        barcodeStatus.existingProduct ? (
+                            <Button
+                                color="inherit"
+                                size="small"
+                                onClick={() => navigate(`/products/edit/${barcodeStatus.existingProduct?.id}`)}
+                            >
+                                Edit Existing Product
+                            </Button>
+                        ) : undefined
+                    }
+                >
+                    {barcodeStatus.message}
                 </Alert>
             )}
 
@@ -224,15 +375,25 @@ function ProductFormPage() {
                                 <TextField
                                     label="Barcode"
                                     value={formData.barcode}
-                                    onChange={(e) => handleChange('barcode', e.target.value)}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        handleChange('barcode', val);
+                                        if (val.length >= 3) {
+                                            checkBarcodeAvailability(val);
+                                        } else {
+                                            setBarcodeStatus(null);
+                                        }
+                                    }}
                                     inputRef={barcodeInputRef}
                                     InputProps={{
                                         endAdornment: (
                                             <InputAdornment position="end">
-                                                <Tooltip title="Click to focus and scan barcode">
+                                                <Tooltip title="Scan barcode with Axevia scanner or click to focus">
                                                     <Button 
                                                         size="small" 
-                                                        variant="outlined" 
+                                                        variant="contained" 
+                                                        color="primary"
+                                                        startIcon={<QrCodeScannerIcon />}
                                                         onClick={() => barcodeInputRef.current?.focus()}
                                                     >
                                                         Scan
