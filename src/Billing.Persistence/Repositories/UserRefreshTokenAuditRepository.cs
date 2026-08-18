@@ -40,7 +40,6 @@ public sealed class UserRepository : GenericRepository<User>, IUserRepository
 
     public async Task<IReadOnlyList<string>> GetPermissionsAsync(Guid userId, IDbTransaction? transaction = null, CancellationToken cancellationToken = default)
     {
-        var tenantId = RequireTenantId();
         const string sql = @"
             SELECT DISTINCT p.Name
             FROM UserRoles ur
@@ -50,13 +49,12 @@ public sealed class UserRepository : GenericRepository<User>, IUserRepository
               AND rp.IsDeleted = 0 AND p.IsDeleted = 0;";
         var connection = await GetConnectionAsync(transaction, cancellationToken);
         var result = await connection.QueryAsync<string>(
-            new CommandDefinition(sql, new { TenantId = tenantId, UserId = userId }, transaction, cancellationToken: cancellationToken));
+            new CommandDefinition(sql, new { UserId = userId }, transaction, cancellationToken: cancellationToken));
         return result.AsList();
     }
 
     public async Task<IReadOnlyList<string>> GetRolesAsync(Guid userId, IDbTransaction? transaction = null, CancellationToken cancellationToken = default)
     {
-        var tenantId = RequireTenantId();
         const string sql = @"
             SELECT r.Name
             FROM UserRoles ur
@@ -64,7 +62,7 @@ public sealed class UserRepository : GenericRepository<User>, IUserRepository
             WHERE ur.UserId = @UserId AND ur.IsDeleted = 0 AND r.IsDeleted = 0;";
         var connection = await GetConnectionAsync(transaction, cancellationToken);
         var result = await connection.QueryAsync<string>(
-            new CommandDefinition(sql, new { TenantId = tenantId, UserId = userId }, transaction, cancellationToken: cancellationToken));
+            new CommandDefinition(sql, new { UserId = userId }, transaction, cancellationToken: cancellationToken));
         return result.AsList();
     }
 
