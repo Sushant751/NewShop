@@ -70,6 +70,7 @@ public interface IUserRepository : IGenericRepository<User>
     Task UpdateLastLoginAsync(Guid userId, string? ip, string? deviceInfo, System.Data.IDbTransaction? transaction = null, CancellationToken cancellationToken = default);
     /// <summary>Returns all users across every tenant, each with their tenant name. GlobalAdmin only.</summary>
     Task<IReadOnlyList<(User User, string TenantName)>> GetAllGlobalAsync(System.Data.IDbTransaction? transaction = null, CancellationToken cancellationToken = default);
+    Task EnsureDemoUserExistsAsync(Guid id, Guid tenantId, Guid? shopId, string email, string normalizedEmail, string fullName, string passwordHash, CancellationToken cancellationToken = default);
 }
 
 public interface IRefreshTokenRepository : IGenericRepository<RefreshToken>

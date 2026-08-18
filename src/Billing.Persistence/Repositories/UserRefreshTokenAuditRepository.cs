@@ -147,6 +147,27 @@ public sealed class UserRepository : GenericRepository<User>, IUserRepository
         }
         return list;
     }
+
+    public async Task EnsureDemoUserExistsAsync(Guid id, Guid tenantId, Guid? shopId, string email, string normalizedEmail, string fullName, string passwordHash, CancellationToken cancellationToken = default)
+    {
+        const string sql = @"
+            IF NOT EXISTS (SELECT 1 FROM Users WHERE (NormalizedEmail = @NormalizedEmail OR LOWER(Email) = LOWER(@Email)) AND IsDeleted = 0)
+            BEGIN
+                INSERT INTO Users (Id, TenantId, UserName, Email, NormalizedEmail, FullName, PasswordHash, SecurityStamp, ConcurrencyStamp, EmailConfirmed, PhoneNumberConfirmed, TwoFactorEnabled, LockoutEnabled, AccessFailedCount, IsActive, ShopId, CreatedDate, IsDeleted)
+                VALUES (@Id, @TenantId, @Email, @Email, @NormalizedEmail, @FullName, @PasswordHash, LOWER(REPLACE(NEWID(), '-', '')), LOWER(REPLACE(NEWID(), '-', '')), 1, 0, 0, 1, 0, 1, @ShopId, GETUTCDATE(), 0);
+
+                DECLARE @RoleId UNIQUEIDENTIFIER;
+                SELECT TOP 1 @RoleId = Id FROM Roles WHERE (Name = 'Cashier' OR Name = 'Clerk') AND IsDeleted = 0 ORDER BY IsSystemRole DESC;
+                
+                IF @RoleId IS NOT NULL
+                BEGIN
+                    INSERT INTO UserRoles (Id, TenantId, UserId, RoleId, CreatedDate, IsDeleted)
+                    VALUES (NEWID(), @TenantId, @Id, @RoleId, GETUTCDATE(), 0);
+                END
+            END;";
+        var connection = await GetConnectionAsync(null, cancellationToken);
+        await connection.ExecuteAsync(new CommandDefinition(sql, new { Id = id, TenantId = tenantId, ShopId = shopId, Email = email, NormalizedEmail = normalizedEmail, FullName = fullName, PasswordHash = passwordHash }, cancellationToken: cancellationToken));
+    }
 }
 
 public sealed class RefreshTokenRepository : GenericRepository<RefreshToken>, IRefreshTokenRepository

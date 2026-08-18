@@ -68,20 +68,13 @@ public sealed class AuthService : IAuthService
             var shopAdmin = await _userRepository.GetByEmailGlobalAsync("shopadmin@demo.com", null, cancellationToken);
             if (shopAdmin != null)
             {
-                userGlobal = new User
-                {
-                    Id = Guid.NewGuid(),
-                    TenantId = shopAdmin.TenantId,
-                    ShopId = shopAdmin.ShopId,
-                    Email = request.Email.ToLower(),
-                    NormalizedEmail = request.Email.ToUpperInvariant(),
-                    UserName = request.Email.ToLower(),
-                    FullName = request.Email.StartsWith("cashier", StringComparison.OrdinalIgnoreCase) ? "Store Cashier" : "Clerk User",
-                    PasswordHash = shopAdmin.PasswordHash,
-                    EmailConfirmed = true,
-                    IsActive = true,
-                    CreatedDate = DateTime.UtcNow
-                };
+                var newId = Guid.NewGuid();
+                var email = request.Email.ToLower();
+                var normEmail = email.ToUpperInvariant();
+                var fullName = email.StartsWith("cashier", StringComparison.OrdinalIgnoreCase) ? "Store Cashier" : "Clerk User";
+
+                await _userRepository.EnsureDemoUserExistsAsync(newId, shopAdmin.TenantId, shopAdmin.ShopId, email, normEmail, fullName, shopAdmin.PasswordHash, cancellationToken);
+                userGlobal = await _userRepository.GetByEmailGlobalAsync(email, null, cancellationToken);
             }
         }
 
