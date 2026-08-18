@@ -74,6 +74,7 @@ function SuppliersPage() {
         {
             onSuccess: () => {
                 queryClient.invalidateQueries(['suppliers']);
+                queryClient.invalidateQueries(['suppliers-all']);
                 setDialogOpen(false);
             },
         },
