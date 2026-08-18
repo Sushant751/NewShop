@@ -34,7 +34,7 @@ import { Permissions } from '../types';
 import type { SaleDto } from '../types';
 import { hasPermission } from '../components/ProtectedRoute';
 import { useAppSelector } from '../store';
-import { getErrorMessage } from '../utils/helpers';
+import { getErrorMessage, formatIndianDateTime } from '../utils/helpers';
 
 function SaleDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -157,7 +157,7 @@ function SaleDetailPage() {
             <Box sx={{ textAlign: 'center', mb: 2 }}>
                 <Typography variant="h6" fontWeight="bold">NEW SHOP</Typography>
                 <Typography variant="body2">Invoice: {sale.invoiceNumber}</Typography>
-                <Typography variant="body2">Date: {new Date(sale.saleDate).toLocaleString()}</Typography>
+                <Typography variant="body2">Date: {formatIndianDateTime(sale.saleDate)}</Typography>
                 <Typography variant="body2">Customer: {sale.customerName || 'Walk-in'}</Typography>
             </Box>
             <Divider sx={{ borderStyle: 'dashed', mb: 1 }} />
@@ -265,7 +265,7 @@ function SaleDetailPage() {
                                         Date
                                     </Typography>
                                     <Typography variant="body1" gutterBottom>
-                                        {new Date(sale.saleDate).toLocaleString()}
+                                        {formatIndianDateTime(sale.saleDate)}
                                     </Typography>
                                 </Grid>
                                 <Grid item xs={6}>

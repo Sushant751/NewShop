@@ -48,6 +48,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
 const drawerWidth = 260;
+const collapsedDrawerWidth = 76;
 
 interface NavGroup {
     category: string;
@@ -148,21 +149,8 @@ function Layout() {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const drawerVariant = isMobile ? 'temporary' : 'persistent';
     const drawerOpen = isMobile ? open : true;
+    const effectiveDrawerWidth = !isMobile ? (open ? drawerWidth : collapsedDrawerWidth) : drawerWidth;
     const toggleDrawer = () => setOpen(!open);
-
-    const appBarSx = {
-        zIndex: (theme) => theme.zIndex.drawer + 1,
-        transition: (theme) =>
-            theme.transitions.create(['width', 'margin'], {
-                easing: theme.transitions.easing.sharp,
-                duration: theme.transitions.duration.leavingScreen,
-            }),
-        marginLeft: !isMobile && drawerOpen ? `${drawerWidth}px` : 0,
-        width: !isMobile && drawerOpen ? `calc(100% - ${drawerWidth}px)` : '100%',
-        bgcolor: '#ffffff',
-        borderBottom: '1px solid #e6ebf1',
-        boxShadow: 'none',
-    };
 
 
 
@@ -206,8 +194,8 @@ function Layout() {
                             easing: theme.transitions.easing.sharp,
                             duration: theme.transitions.duration.leavingScreen,
                         }),
-                    marginLeft: open ? `${drawerWidth}px` : 0,
-                    width: open ? `calc(100% - ${drawerWidth}px)` : '100%',
+                    marginLeft: !isMobile ? `${effectiveDrawerWidth}px` : 0,
+                    width: !isMobile ? `calc(100% - ${effectiveDrawerWidth}px)` : '100%',
                     bgcolor: '#ffffff',
                     borderBottom: '1px solid #e6ebf1',
                     boxShadow: 'none',
@@ -338,13 +326,17 @@ function Layout() {
                 open={drawerOpen}
                 onClose={toggleDrawer}
                 sx={{
-                    width: drawerWidth,
+                    width: !isMobile ? effectiveDrawerWidth : drawerWidth,
                     flexShrink: 0,
                     '& .MuiDrawer-paper': {
-                        width: drawerWidth,
+                        width: !isMobile ? effectiveDrawerWidth : drawerWidth,
                         boxSizing: 'border-box',
                         bgcolor: '#ffffff',
                         borderRight: '1px solid #e6ebf1',
+                        transition: (theme) => theme.transitions.create('width', {
+                            easing: theme.transitions.easing.sharp,
+                            duration: theme.transitions.duration.leavingScreen,
+                        }),
                     },
                 }}
             >
@@ -353,7 +345,8 @@ function Layout() {
                     sx={{
                         display: 'flex',
                         alignItems: 'center',
-                        px: 3,
+                        justifyContent: open ? 'flex-start' : 'center',
+                        px: open ? 3 : 1.5,
                         py: 2.2,
                         gap: 1.5,
                         borderBottom: '1px solid #e6ebf1',
@@ -367,18 +360,22 @@ function Layout() {
                             p: 1,
                             display: 'flex',
                             boxShadow: isGlobalAdmin ? '0 2px 8px rgba(24, 144, 255, 0.35)' : '0 2px 8px rgba(70, 128, 255, 0.35)',
+                            minWidth: 36,
+                            justifyContent: 'center',
                         }}
                     >
                         {isGlobalAdmin ? <AdminPanelSettingsIcon /> : <StorefrontIcon />}
                     </Box>
-                    <Box>
-                        <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2, color: '#1d2630' }}>
-                            {isGlobalAdmin ? 'App Admin' : (user?.tenantName || 'My Shop')}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: isGlobalAdmin ? '#52c41a' : '#8c8c8c', fontWeight: 600 }}>
-                            {isGlobalAdmin ? 'GLOBAL ADMIN' : (user?.roles?.[0] || 'STAFF').toUpperCase()}
-                        </Typography>
-                    </Box>
+                    {open && (
+                        <Box>
+                            <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2, color: '#1d2630' }}>
+                                {isGlobalAdmin ? 'App Admin' : (user?.tenantName || 'My Shop')}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: isGlobalAdmin ? '#52c41a' : '#8c8c8c', fontWeight: 600 }}>
+                                {isGlobalAdmin ? 'GLOBAL ADMIN' : (user?.roles?.[0] || 'STAFF').toUpperCase()}
+                            </Typography>
+                        </Box>
+                    )}
                 </Box>
 
                 <Box sx={{ overflow: 'auto', py: 1 }}>
@@ -399,8 +396,9 @@ function Layout() {
                                             fontWeight: 700,
                                             letterSpacing: '0.8px',
                                             lineHeight: '32px',
-                                            px: 3,
+                                            px: open ? 3 : 1.5,
                                             mt: 1,
+                                            display: open ? 'block' : 'none',
                                         }}
                                     >
                                         {group.category}
@@ -420,7 +418,9 @@ function Layout() {
                                                 sx={{
                                                     borderRadius: 2,
                                                     py: 1,
-                                                    px: 2,
+                                                    px: open ? 2 : 1,
+                                                    minHeight: 48,
+                                                    justifyContent: open ? 'flex-start' : 'center',
                                                     transition: 'all 0.2s ease',
                                                     bgcolor: isActive ? '#e8f0ff !important' : 'transparent',
                                                     color: isActive ? '#4680ff' : '#5b6b79',
@@ -433,19 +433,23 @@ function Layout() {
                                                 <ListItemIcon
                                                     sx={{
                                                         color: isActive ? '#4680ff' : '#8c8c8c',
-                                                        minWidth: 36,
+                                                        minWidth: open ? 36 : 0,
+                                                        mr: open ? 1 : 0,
+                                                        justifyContent: 'center',
                                                     }}
                                                 >
                                                     {item.icon}
                                                 </ListItemIcon>
-                                                <ListItemText
-                                                    primary={item.label}
-                                                    primaryTypographyProps={{
-                                                        fontSize: '0.875rem',
-                                                        fontWeight: isActive ? 600 : 500,
-                                                    }}
-                                                />
-                                                {item.badge && (
+                                                {open && (
+                                                    <ListItemText
+                                                        primary={item.label}
+                                                        primaryTypographyProps={{
+                                                            fontSize: '0.875rem',
+                                                            fontWeight: isActive ? 600 : 500,
+                                                        }}
+                                                    />
+                                                )}
+                                                {open && item.badge && (
                                                     <Chip
                                                         label={item.badge}
                                                         size="small"
@@ -474,18 +478,12 @@ function Layout() {
                 sx={{
                     flexGrow: 1,
                     p: 3.5,
-                    width: `calc(100% - ${open ? drawerWidth : 0}px)`,
+                    width: !isMobile ? `calc(100% - ${effectiveDrawerWidth}px)` : '100%',
                     minHeight: '100vh',
                     bgcolor: '#f4f6f8',
                     transition: (theme) => theme.transitions.create('width', {
                         easing: theme.transitions.easing.sharp,
                         duration: theme.transitions.duration.leavingScreen,
-                    }),
-                    ...(open && {
-                        transition: (theme) => theme.transitions.create('width', {
-                            easing: theme.transitions.easing.easeOut,
-                            duration: theme.transitions.duration.enteringScreen,
-                        }),
                     }),
                 }}
             >

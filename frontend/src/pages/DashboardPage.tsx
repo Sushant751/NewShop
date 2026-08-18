@@ -49,7 +49,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
 import { dashboardApi } from '../api/endpoints';
 import type { DashboardDto, ShopMetricsDto } from '../types';
-import { formatCurrency, getErrorMessage } from '../utils/helpers';
+import { formatCurrency, getErrorMessage, getIndiaDateString, formatIndianDateTime } from '../utils/helpers';
 import { useAppSelector, RootState } from '../store';
 import { Roles } from '../types';
 
@@ -158,8 +158,8 @@ function DashboardPage() {
     const monthAgo = new Date();
     monthAgo.setDate(today.getDate() - 30);
 
-    const [from, setFrom] = useState(monthAgo.toISOString().split('T')[0]);
-    const [to, setTo] = useState(today.toISOString().split('T')[0]);
+    const [from, setFrom] = useState(getIndiaDateString(monthAgo));
+    const [to, setTo] = useState(getIndiaDateString(today));
 
     // Previous period: same duration, immediately before the selected range
     const prevFrom = new Date(from);
@@ -167,8 +167,8 @@ function DashboardPage() {
     const rangeDays = Math.max(1, Math.round((new Date(to).getTime() - new Date(from).getTime()) / 86400000));
     prevFrom.setDate(prevFrom.getDate() - rangeDays);
 
-    const prevFromStr = prevFrom.toISOString().split('T')[0];
-    const prevToStr = prevTo.toISOString().split('T')[0];
+    const prevFromStr = getIndiaDateString(prevFrom);
+    const prevToStr = getIndiaDateString(prevTo);
 
     const { data, isLoading, error } = useQuery<DashboardDto>(
         ['dashboard', from, to, isGlobalAdmin ? 'global' : currentUser?.tenantId],
@@ -199,7 +199,11 @@ function DashboardPage() {
     }
 
     const dailySalesData = (data?.dailySales || []).map((item) => ({
-        date: new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+        date: new Intl.DateTimeFormat('en-IN', {
+            timeZone: 'Asia/Kolkata',
+            month: 'short',
+            day: 'numeric',
+        }).format(new Date(item.date)),
         sales: item.totalSales,
         orders: item.salesCount,
     }));

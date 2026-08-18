@@ -24,7 +24,7 @@ import {
 import DownloadIcon from '@mui/icons-material/Download';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import { reportsApi } from '../api/endpoints';
-import { formatCurrency, getErrorMessage } from '../utils/helpers';
+import { formatCurrency, getErrorMessage, getIndiaDateString, formatIndianDateTime, formatIndianDate } from '../utils/helpers';
 import type {
     ProfitLossDto,
     SalesReportSummaryDto,
@@ -41,8 +41,8 @@ function ReportsPage() {
     const monthAgo = new Date();
     monthAgo.setDate(today.getDate() - 30);
 
-    const [from, setFrom] = useState(monthAgo.toISOString().split('T')[0]);
-    const [to, setTo] = useState(today.toISOString().split('T')[0]);
+    const [from, setFrom] = useState(getIndiaDateString(monthAgo));
+    const [to, setTo] = useState(getIndiaDateString(today));
     const [tab, setTab] = useState<ReportTab>('profitLoss');
     const [exporting, setExporting] = useState(false);
 
@@ -111,7 +111,7 @@ function ReportsPage() {
                 filename = `gst-report_${from}_to_${to}.csv`;
             } else {
                 response = await reportsApi.inventoryValuationExport();
-                filename = `inventory-valuation_${today.toISOString().split('T')[0]}.csv`;
+                filename = `inventory-valuation_${getIndiaDateString(today)}.csv`;
             }
             downloadBlob(response.data, filename);
         } catch (err) {
@@ -260,7 +260,7 @@ function ReportsPage() {
                         <TableBody>
                             {d.sales.map((s, idx) => (
                                 <TableRow key={idx}>
-                                    <TableCell>{new Date(s.saleDate).toLocaleDateString()}</TableCell>
+                                    <TableCell>{formatIndianDate(s.saleDate)}</TableCell>
                                     <TableCell>{s.invoiceNumber}</TableCell>
                                     <TableCell>{s.customerName || 'Walk-in'}</TableCell>
                                     <TableCell align="right">{formatCurrency(s.subTotal)}</TableCell>

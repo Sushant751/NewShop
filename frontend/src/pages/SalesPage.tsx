@@ -15,7 +15,7 @@ import { DataGrid, GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { salesApi } from '../api/endpoints';
 import type { SaleDto } from '../types';
-import { getErrorMessage } from '../utils/helpers';
+import { getErrorMessage, formatIndianDateTime } from '../utils/helpers';
 
 function SalesPage() {
     const navigate = useNavigate();
@@ -65,7 +65,7 @@ function SalesPage() {
             headerName: 'Date',
             flex: 1,
             minWidth: 150,
-            valueFormatter: (value: string) => new Date(value).toLocaleString(),
+            valueFormatter: (value: string) => formatIndianDateTime(value),
         },
         { field: 'customerName', headerName: 'Customer', flex: 1, minWidth: 120 },
         {

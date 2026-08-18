@@ -38,7 +38,7 @@ import { Permissions } from '../types';
 import type { PurchaseDto, CreatePurchaseRequest, SupplierDto, ProductDto, PagedResult } from '../types';
 import { hasPermission } from '../components/ProtectedRoute';
 import { useAppSelector } from '../store';
-import { getErrorMessage } from '../utils/helpers';
+import { getErrorMessage, formatIndianDateTime } from '../utils/helpers';
 
 interface PurchaseItemForm {
     productId: string;
@@ -231,7 +231,7 @@ function PurchasesPage() {
             headerName: 'Date',
             flex: 1,
             minWidth: 150,
-            valueFormatter: (value: string) => new Date(value).toLocaleString(),
+            valueFormatter: (value: string) => formatIndianDateTime(value),
         },
         {
             field: 'supplierName',
@@ -499,7 +499,7 @@ function PurchasesPage() {
                                 <Grid item xs={6}>
                                     <Typography variant="body2" color="text.secondary">Date</Typography>
                                     <Typography variant="body1">
-                                        {new Date(detailQuery.data.purchaseDate).toLocaleString()}
+                                        {formatIndianDateTime(detailQuery.data.purchaseDate)}
                                     </Typography>
                                 </Grid>
                                 <Grid item xs={6}>

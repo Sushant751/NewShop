@@ -115,7 +115,7 @@ public sealed class ReportRepository : IReportRepository
                 si.ProductId,
                 si.ProductName,
                 SUM(si.Quantity) AS QuantitySold,
-                SUM(si.LineTotal - si.TaxAmount) AS Revenue
+                SUM((si.LineTotal - si.TaxAmount) - (si.CostPrice * si.Quantity)) AS Revenue
             FROM SaleItems si
             INNER JOIN Sales s ON s.Id = si.SaleId
             WHERE si.IsDeleted = 0
@@ -127,7 +127,7 @@ public sealed class ReportRepository : IReportRepository
                 si.ProductId,
                 si.ProductName,
                 SUM(si.Quantity) AS QuantitySold,
-                SUM(si.LineTotal - si.TaxAmount) AS Revenue
+                SUM((si.LineTotal - si.TaxAmount) - (si.CostPrice * si.Quantity)) AS Revenue
             FROM SaleItems si
             INNER JOIN Sales s ON s.Id = si.SaleId AND s.TenantId = si.TenantId
             WHERE si.TenantId = @TenantId AND si.IsDeleted = 0
