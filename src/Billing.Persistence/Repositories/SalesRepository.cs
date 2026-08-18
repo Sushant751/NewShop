@@ -138,9 +138,16 @@ public sealed class SalesRepository : GenericRepository<Sale>, ISalesRepository
 
             -- Restore stock for cancelled sale
             UPDATE p
-            SET p.CurrentStock = p.CurrentStock + si.Quantity
+            SET p.CurrentStock = p.CurrentStock + q.RestoreQty
             FROM Products p
-            INNER JOIN SaleItems si ON si.ProductId = p.Id AND si.SaleId = @SaleId
+            INNER JOIN (
+                SELECT si.ProductId, SUM(si.Quantity) AS RestoreQty
+                FROM SaleItems si
+                WHERE si.SaleId = @SaleId
+                  AND si.TenantId = @TenantId
+                  AND si.IsDeleted = 0
+                GROUP BY si.ProductId
+            ) q ON q.ProductId = p.Id
             WHERE p.TenantId = @TenantId AND p.IsDeleted = 0;";
 
         var connection = await GetConnectionAsync(transaction, cancellationToken);
