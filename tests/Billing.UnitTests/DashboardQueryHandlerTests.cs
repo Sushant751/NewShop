@@ -36,7 +36,7 @@ public class DashboardQueryHandlerTests
         var query = new GetDashboardQuery(from, to, IsGlobalAdmin: false);
 
         var summary = new DashboardSummary(
-            TotalSales: 1000, TotalPurchases: 400, TotalExpenses: 100, TotalProfit: 500,
+            TotalSales: 1000, TotalDiscountAmount: 50, TotalPurchases: 400, TotalExpenses: 100, TotalProfit: 500,
             SalesCount: 10, ProductCount: 20, CustomerCount: 5, LowStockCount: 2,
             TotalShopsCount: 1, TotalUsersCount: 3, TotalCancelledBillsCount: 0, TotalCancelledAmount: 0);
 
@@ -66,7 +66,7 @@ public class DashboardQueryHandlerTests
         var query = new GetDashboardQuery(from, to, IsGlobalAdmin: true);
 
         var summary = new DashboardSummary(
-            TotalSales: 5000, TotalPurchases: 2000, TotalExpenses: 500, TotalProfit: 2500,
+            TotalSales: 5000, TotalDiscountAmount: 200, TotalPurchases: 2000, TotalExpenses: 500, TotalProfit: 2500,
             SalesCount: 50, ProductCount: 100, CustomerCount: 25, LowStockCount: 5,
             TotalShopsCount: 3, TotalUsersCount: 12, TotalCancelledBillsCount: 1, TotalCancelledAmount: 50);
 

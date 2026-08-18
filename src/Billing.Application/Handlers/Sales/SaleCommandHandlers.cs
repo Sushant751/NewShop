@@ -65,9 +65,21 @@ public sealed class CreateSaleHandler : IRequestHandler<CreateSaleCommand, Resul
                 DiscountAmount = request.Sale.DiscountAmount
             };
 
+            var saleDiscount = request.Sale.DiscountAmount;
+            var itemBaseTotal = request.Sale.Items.Sum(i => i.Quantity * i.UnitPrice);
+            var effectiveItems = request.Sale.Items.Select(item =>
+            {
+                if (saleDiscount <= 0 || itemBaseTotal <= 0 || item.DiscountAmount > 0)
+                    return item;
+
+                var itemValue = item.Quantity * item.UnitPrice;
+                var allocatedDiscount = Math.Round(saleDiscount * (itemValue / itemBaseTotal), 2);
+                return new SaleItemRequest(item.ProductId, item.Quantity, item.UnitPrice, allocatedDiscount);
+            }).ToList();
+
             decimal subTotal = 0, taxTotal = 0;
             var items = new List<Domain.Entities.SaleItem>();
-            foreach (var item in request.Sale.Items)
+            foreach (var item in effectiveItems)
             {
                 var product = await _productRepository.GetByIdAsync(item.ProductId, _unitOfWork.Transaction, cancellationToken)
                     ?? throw new NotFoundException(nameof(Domain.Entities.Product), item.ProductId);

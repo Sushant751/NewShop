@@ -99,11 +99,11 @@ public interface IReportRepository
 }
 
 public sealed record DashboardSummary(
-    decimal TotalSales, decimal TotalPurchases, decimal TotalExpenses,
-    decimal TotalProfit, int SalesCount, int ProductCount, int CustomerCount,
-    int LowStockCount, int TotalShopsCount = 0, int TotalUsersCount = 0,
-    int TotalCancelledBillsCount = 0, decimal TotalCancelledAmount = 0,
-    decimal TotalDiscountAmount = 0);
+    decimal TotalSales, decimal TotalDiscountAmount, decimal TotalPurchases,
+    decimal TotalExpenses, decimal TotalProfit, int SalesCount, int ProductCount,
+    int CustomerCount, int LowStockCount, int TotalShopsCount = 0,
+    int TotalUsersCount = 0, int TotalCancelledBillsCount = 0,
+    decimal TotalCancelledAmount = 0);
 
 public sealed record ShopMetricsRow(
     Guid TenantId, string TenantName, string TenantSlug, string? Plan, string Status,
