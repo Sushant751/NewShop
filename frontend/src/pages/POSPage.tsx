@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import {
@@ -34,6 +34,9 @@ import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
+import VolumeUpIcon from '@mui/icons-material/VolumeUp';
+import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import { productsApi, salesApi, customersApi } from '../api/endpoints';
 import { PaymentMethod } from '../types';
 import type { ProductDto, CustomerDto } from '../types';
@@ -42,6 +45,40 @@ interface CartItem {
     product: ProductDto;
     quantity: number;
 }
+
+// Web Audio API Beep Synthesizer for supermarket scanner feedback
+const playBeep = (type: 'success' | 'error' = 'success') => {
+    try {
+        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'success') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1400, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1800, ctx.currentTime + 0.08);
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.08);
+        } else {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(400, ctx.currentTime);
+            osc.frequency.setValueAtTime(250, ctx.currentTime + 0.12);
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.12);
+        }
+    } catch {
+        // Fallback if browser audio policy prevents sound before user interaction
+    }
+};
 
 function POSPage() {
     const navigate = useNavigate();
@@ -55,6 +92,7 @@ function POSPage() {
     const [checkoutOpen, setCheckoutOpen] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.Cash);
     const [paymentAmount, setPaymentAmount] = useState(0);
+    const [soundEnabled, setSoundEnabled] = useState(true);
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
         open: false,
         message: '',
@@ -128,6 +166,81 @@ function POSPage() {
         });
     }, []);
 
+    // Axevia 2D In-Counter Barcode Scanner Processor
+    const handleScannedCode = useCallback(async (code: string) => {
+        const cleanCode = code.trim();
+        if (!cleanCode) return;
+
+        try {
+            const results = await productsApi.search(cleanCode, 10);
+            if (results && results.length > 0) {
+                const exactMatch = results.find(
+                    (p) => p.barcode?.toLowerCase() === cleanCode.toLowerCase() || p.sku?.toLowerCase() === cleanCode.toLowerCase()
+                ) || results[0];
+
+                addToCart(exactMatch);
+                if (soundEnabled) playBeep('success');
+                setSnackbar({
+                    open: true,
+                    message: `Scanned: ${exactMatch.name} (₹${exactMatch.sellingPrice.toFixed(2)})`,
+                    severity: 'success',
+                });
+                setSearchTerm('');
+            } else {
+                if (soundEnabled) playBeep('error');
+                setSnackbar({
+                    open: true,
+                    message: `Barcode/SKU "${cleanCode}" not found in inventory!`,
+                    severity: 'error',
+                });
+            }
+        } catch {
+            if (soundEnabled) playBeep('error');
+            setSnackbar({
+                open: true,
+                message: `Failed to query barcode: ${cleanCode}`,
+                severity: 'error',
+            });
+        }
+    }, [addToCart, soundEnabled]);
+
+    // Global Key Listener for Axevia 2D Camera / In-Counter Barcode Scanner
+    useEffect(() => {
+        let buffer = '';
+        let lastKeyTime = Date.now();
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const target = e.target as HTMLElement;
+            const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+
+            if (e.key === 'Enter') {
+                if (buffer.length >= 2) {
+                    e.preventDefault();
+                    const scanned = buffer;
+                    buffer = '';
+                    handleScannedCode(scanned);
+                }
+                return;
+            }
+
+            if (e.key.length === 1) {
+                const now = Date.now();
+                const timeDiff = now - lastKeyTime;
+                lastKeyTime = now;
+
+                // Fast burst typing detection (< 50ms per key) characteristic of Axevia 2D scanner
+                if (timeDiff < 50 || !isInput) {
+                    buffer += e.key;
+                } else {
+                    buffer = e.key;
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [handleScannedCode]);
+
     const updateQuantity = (productId: string, delta: number) => {
         setCart((prev) =>
             prev
@@ -173,9 +286,35 @@ function POSPage() {
 
     return (
         <Box>
-            <Typography variant="h4" gutterBottom>
-                Point of Sale
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h4">
+                    Point of Sale
+                </Typography>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Chip
+                        icon={<QrCodeScannerIcon sx={{ color: '#2e7d32 !important' }} />}
+                        label="Axevia 2D Scanner Ready"
+                        color="success"
+                        variant="outlined"
+                        size="medium"
+                        sx={{
+                            fontWeight: 600,
+                            bgcolor: 'rgba(46, 125, 50, 0.08)',
+                            borderColor: '#2e7d32',
+                            px: 1,
+                        }}
+                    />
+                    <IconButton
+                        color={soundEnabled ? "primary" : "default"}
+                        onClick={() => setSoundEnabled(!soundEnabled)}
+                        title={soundEnabled ? "Scanner Beep Sound Enabled" : "Scanner Beep Sound Muted"}
+                        sx={{ border: '1px solid #e0e0e0' }}
+                    >
+                        {soundEnabled ? <VolumeUpIcon /> : <VolumeOffIcon />}
+                    </IconButton>
+                </Box>
+            </Box>
 
             <Grid container spacing={3}>
                 {/* Product Search & Results */}
