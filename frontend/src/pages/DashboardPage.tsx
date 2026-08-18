@@ -647,7 +647,7 @@ function DashboardPage() {
                                 <CardContent>
                                     <Box sx={{ mb: 2 }}>
                                         <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                                            Top Product Revenue
+                                            Top Product Net Profit
                                         </Typography>
                                         <Typography variant="caption" color="textSecondary">
                                             Highest performing sales inventory
@@ -672,7 +672,7 @@ function DashboardPage() {
                                                     border: '1px solid #e6ebf1',
                                                 }}
                                             />
-                                            <Bar dataKey="revenue" fill="#4680ff" radius={[0, 6, 6, 0]} name="Revenue (₹)" />
+                                            <Bar dataKey="revenue" fill="#4680ff" radius={[0, 6, 6, 0]} name="Net Profit (₹)" />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 </CardContent>
@@ -693,7 +693,7 @@ function DashboardPage() {
                                             <TableRow sx={{ bgcolor: '#fafafa' }}>
                                                 <TableCell sx={{ fontWeight: 700 }}>Product Name</TableCell>
                                                 <TableCell align="right" sx={{ fontWeight: 700 }}>Quantity Sold</TableCell>
-                                                <TableCell align="right" sx={{ fontWeight: 700 }}>Total Revenue</TableCell>
+                                                <TableCell align="right" sx={{ fontWeight: 700 }}>Net Profit</TableCell>
                                                 <TableCell align="center" sx={{ fontWeight: 700 }}>Performance</TableCell>
                                             </TableRow>
                                         </TableHead>

@@ -56,6 +56,9 @@ function SaleDetailPage() {
             onSuccess: () => {
                 queryClient.invalidateQueries(['sale', id]);
                 queryClient.invalidateQueries(['sales']);
+                queryClient.invalidateQueries('dashboard');
+                queryClient.invalidateQueries('dashboard-prev');
+                queryClient.invalidateQueries('products');
                 setCancelDialogOpen(false);
                 setCancelReason('');
             },
