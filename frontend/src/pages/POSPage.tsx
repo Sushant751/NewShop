@@ -142,15 +142,30 @@ function POSPage() {
     );
 
     const createSaleMutation = useMutation(
-        () =>
-            salesApi.create({
-                customerId,
-                shopId: null, // backend resolves from token
-                items: cart.map((item) => ({
+        () => {
+            const subtotalValue = cart.reduce((sum, item) => sum + item.product.sellingPrice * item.quantity, 0);
+            const itemDiscounts = subtotalValue > 0
+                ? cart.map((item) => {
+                    const itemValue = item.product.sellingPrice * item.quantity;
+                    const allocated = discountAmount > 0 ? Number((discountAmount * (itemValue / subtotalValue)).toFixed(2)) : 0;
+                    return {
+                        productId: item.product.id,
+                        quantity: item.quantity,
+                        unitPrice: item.product.sellingPrice,
+                        discountAmount: allocated,
+                    };
+                })
+                : cart.map((item) => ({
                     productId: item.product.id,
                     quantity: item.quantity,
                     unitPrice: item.product.sellingPrice,
-                })),
+                    discountAmount: 0,
+                }));
+
+            return salesApi.create({
+                customerId,
+                shopId: null,
+                items: itemDiscounts,
                 payments: [
                     {
                         method: PaymentMethod[paymentMethod],
@@ -159,7 +174,8 @@ function POSPage() {
                 ],
                 discountAmount,
                 notes: notes || null,
-            }),
+            });
+        },
         {
             onSuccess: (sale) => {
                 queryClient.invalidateQueries('sales');
