@@ -104,6 +104,7 @@ function SaleDetailPage() {
 
     const canCancel = hasPermission(user, Permissions.SalesCancel);
     const isCancellable = sale && sale.status !== 'Cancelled' && sale.status !== 'Returned';
+    const shopName = user?.tenantName || 'My Shop';
 
     if (isLoading) {
         return (
@@ -155,7 +156,7 @@ function SaleDetailPage() {
         {/* Hidden Printable Receipt */}
         <Box id="printable-receipt" sx={{ display: 'none', displayPrint: 'block' }}>
             <Box sx={{ textAlign: 'center', mb: 2 }}>
-                <Typography variant="h6" fontWeight="bold">NEW SHOP</Typography>
+                <Typography variant="h6" fontWeight="bold">{shopName}</Typography>
                 <Typography variant="body2">Invoice: {sale.invoiceNumber}</Typography>
                 <Typography variant="body2">Date: {formatIndianDateTime(sale.saleDate)}</Typography>
                 <Typography variant="body2">Customer: {sale.customerName || 'Walk-in'}</Typography>
