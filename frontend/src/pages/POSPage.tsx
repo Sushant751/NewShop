@@ -169,7 +169,7 @@ function POSPage() {
                 payments: [
                     {
                         method: PaymentMethod[paymentMethod],
-                        amount: paymentAmount || subtotal,
+                        amount: total,
                     },
                 ],
                 discountAmount,
@@ -336,6 +336,12 @@ function POSPage() {
     );
     const total = subtotal + taxAmount - discountAmount;
     const change = paymentAmount - total;
+
+    useEffect(() => {
+        if (checkoutOpen) {
+            setPaymentAmount(total);
+        }
+    }, [checkoutOpen, total]);
 
     return (
         <Box>
@@ -584,10 +590,12 @@ function POSPage() {
                             label="Amount Received"
                             type="number"
                             value={paymentAmount}
-                            onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
-                            InputProps={{ startAdornment: '₹' }}
+                            InputProps={{
+                                startAdornment: '₹',
+                                readOnly: true,
+                            }}
                             fullWidth
-                            helperText={paymentAmount > 0 ? `Change: ₹${Math.max(0, change).toFixed(2)}` : ''}
+                            helperText={`Bill amount: ₹${total.toFixed(2)}`}
                         />
 
                         <TextField
