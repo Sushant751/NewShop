@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAppSelector } from '../store';
-import { Roles } from '../types';
+import { Permissions, Roles } from '../types';
 
 interface ProtectedRouteProps {
     children: ReactNode;
@@ -33,7 +33,7 @@ function ProtectedRoute({ children, permission, role }: ProtectedRouteProps) {
     }
 
     // Check permission requirement
-    if (permission && !user?.permissions?.includes(permission)) {
+    if (permission && !hasPermission(user, permission)) {
         return <Navigate to="/dashboard" replace />;
     }
 
@@ -42,13 +42,30 @@ function ProtectedRoute({ children, permission, role }: ProtectedRouteProps) {
 
 export default ProtectedRoute;
 
-// Convenience helper: check if user has a given permission (GlobalAdmin bypasses)
+// Convenience helper: check if user has a given permission (GlobalAdmin and ShopAdmin bypass)
 export function hasPermission(
     user: { permissions: string[]; roles: string[] } | null,
     permission: string,
 ): boolean {
     if (!user) return false;
-    if (user.roles.includes(Roles.GlobalAdmin)) return true;
-    if (user.roles.includes(Roles.ShopAdmin)) return true;
-    return user.permissions.includes(permission);
+    const userRoles = user.roles || [];
+    if (userRoles.includes(Roles.GlobalAdmin) || userRoles.includes(Roles.ShopAdmin)) return true;
+    if (user.permissions?.includes(permission)) return true;
+
+    // Role-based fallbacks for Cashier, Clerk, Staff, and Manager
+    const isCashierOrClerk = userRoles.includes(Roles.Cashier) || userRoles.includes(Roles.Staff) || userRoles.includes('Clerk') || userRoles.includes('Cashier');
+    const isManager = userRoles.includes(Roles.Manager);
+
+    if (isCashierOrClerk) {
+        if ([Permissions.SalesCreate, Permissions.ProductsView, Permissions.CustomersView, Permissions.SalesView, Permissions.InventoryView].includes(permission as any)) {
+            return true;
+        }
+    }
+    if (isManager) {
+        if (permission !== Permissions.SettingsManage && permission !== Permissions.StaffManage) {
+            return true;
+        }
+    }
+
+    return false;
 }

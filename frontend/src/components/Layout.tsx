@@ -123,7 +123,25 @@ function Layout() {
     const canAccess = (item: NavItem) => {
         if (!item.permission) return true;
         if (isGlobalAdmin || isShopAdmin) return true;
-        return user?.permissions?.includes(item.permission) ?? false;
+        if (user?.permissions?.includes(item.permission)) return true;
+
+        // Role-based fallback for Cashiers, Clerks, Staff, and Managers
+        const userRoles = user?.roles || [];
+        const isCashierOrClerk = userRoles.includes(Roles.Cashier) || userRoles.includes(Roles.Staff) || userRoles.includes('Clerk') || userRoles.includes('Cashier');
+        const isManager = userRoles.includes(Roles.Manager);
+
+        if (isCashierOrClerk) {
+            if ([Permissions.SalesCreate, Permissions.ProductsView, Permissions.CustomersView, Permissions.SalesView, Permissions.InventoryView].includes(item.permission as any)) {
+                return true;
+            }
+        }
+        if (isManager) {
+            if (item.permission !== Permissions.SettingsManage && item.permission !== Permissions.StaffManage) {
+                return true;
+            }
+        }
+
+        return false;
     };
     // Responsive drawer handling
     const theme = useTheme();

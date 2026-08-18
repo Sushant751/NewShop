@@ -94,6 +94,43 @@ public sealed class AuthService : IAuthService
         {
             permissions = (IReadOnlyList<string>)Permissions.All;
         }
+        else if (permissions == null || permissions.Count == 0)
+        {
+            var fallback = new HashSet<string>();
+            if (roles.Contains(Roles.Cashier) || roles.Contains("Cashier") || roles.Contains("Clerk") || roles.Contains(Roles.Staff))
+            {
+                fallback.Add(Permissions.ProductsView);
+                fallback.Add(Permissions.SalesCreate);
+                fallback.Add(Permissions.SalesCancel);
+                fallback.Add(Permissions.CustomersView);
+                fallback.Add(Permissions.CustomersCreate);
+                fallback.Add(Permissions.CustomersEdit);
+                fallback.Add(Permissions.InventoryView);
+            }
+
+            if (roles.Contains(Roles.Manager))
+            {
+                fallback.Add(Permissions.ProductsView);
+                fallback.Add(Permissions.ProductsCreate);
+                fallback.Add(Permissions.ProductsEdit);
+                fallback.Add(Permissions.ProductsDelete);
+                fallback.Add(Permissions.SalesCreate);
+                fallback.Add(Permissions.SalesCancel);
+                fallback.Add(Permissions.CustomersView);
+                fallback.Add(Permissions.CustomersCreate);
+                fallback.Add(Permissions.CustomersEdit);
+                fallback.Add(Permissions.CustomersDelete);
+                fallback.Add(Permissions.PurchasesView);
+                fallback.Add(Permissions.PurchasesCreate);
+                fallback.Add(Permissions.InventoryView);
+                fallback.Add(Permissions.InventoryAdjust);
+                fallback.Add(Permissions.ReportsView);
+                fallback.Add(Permissions.ExpensesView);
+                fallback.Add(Permissions.ExpensesManage);
+            }
+
+            permissions = fallback.ToList();
+        }
 
         // 5. Generate tokens.
         await _unitOfWork.BeginTransactionAsync(cancellationToken: cancellationToken);

@@ -23,10 +23,10 @@ public sealed class UserRepository : GenericRepository<User>, IUserRepository
     public async Task<User?> GetByEmailGlobalAsync(string email, IDbTransaction? transaction = null, CancellationToken cancellationToken = default)
     {
         // No tenant filter — used during login to find the user regardless of which tenant they belong to.
-        const string sql = "SELECT * FROM Users WHERE NormalizedEmail = @Email AND IsDeleted = 0";
+        const string sql = "SELECT * FROM Users WHERE (NormalizedEmail = @NormalizedEmail OR LOWER(Email) = LOWER(@RawEmail)) AND IsDeleted = 0";
         var connection = await GetConnectionAsync(transaction, cancellationToken);
         return await connection.QueryFirstOrDefaultAsync<User>(
-            new CommandDefinition(sql, new { Email = email.ToUpperInvariant() }, transaction, cancellationToken: cancellationToken));
+            new CommandDefinition(sql, new { NormalizedEmail = email.ToUpperInvariant(), RawEmail = email }, transaction, cancellationToken: cancellationToken));
     }
 
     public async Task<User?> GetByUserNameAsync(string userName, IDbTransaction? transaction = null, CancellationToken cancellationToken = default)
