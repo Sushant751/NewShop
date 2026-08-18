@@ -567,6 +567,17 @@ function DashboardPage() {
                         </Grid>
 
                         <Grid item xs={12} sm={6} md={4}>
+                            <MantisStatCard
+                                title="Discount Amount"
+                                value={formatCurrency(data?.totalDiscountAmount || 0)}
+                                pctChange={pctDiff(data?.totalDiscountAmount || 0, prevData?.totalDiscountAmount || 0)}
+                                icon={<AttachMoneyIcon />}
+                                color="#faad14"
+                                bgTint="#fffbe6"
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={4}>
                             { !isGlobalAdmin && (
                                 <MantisStatCard
                                     title="Net Profit"

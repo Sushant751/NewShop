@@ -85,19 +85,19 @@ public sealed record DashboardDto(
     decimal TotalProfit, int SalesCount, int ProductCount, int CustomerCount,
     int LowStockCount, IReadOnlyList<TopProductDto> TopProducts, IReadOnlyList<DailySalesDto> DailySales,
     int TotalShopsCount = 0, int TotalUsersCount = 0, int TotalCancelledBillsCount = 0,
-    decimal TotalCancelledAmount = 0, IReadOnlyList<ShopMetricsDto>? ShopMetrics = null);
+    decimal TotalCancelledAmount = 0, decimal TotalDiscountAmount = 0, IReadOnlyList<ShopMetricsDto>? ShopMetrics = null);
 
 public sealed record TopProductDto(Guid ProductId, string ProductName, decimal QuantitySold, decimal Revenue);
 public sealed record DailySalesDto(DateTime Date, decimal TotalSales, int SalesCount);
-public sealed record ProfitLossDto(decimal Revenue, decimal CostOfGoods, decimal Expenses, decimal GrossProfit, decimal NetProfit);
+public sealed record ProfitLossDto(decimal Revenue, decimal CostOfGoods, decimal Expenses, decimal DiscountAmount, decimal GrossProfit, decimal NetProfit);
 
-public sealed record SalesReportDto(DateTime SaleDate, string InvoiceNumber, string? CustomerName, decimal SubTotal, decimal TaxAmount, decimal GrandTotal, string Status, string PaymentStatus);
+public sealed record SalesReportDto(DateTime SaleDate, string InvoiceNumber, string? CustomerName, decimal SubTotal, decimal DiscountAmount, decimal TaxAmount, decimal GrandTotal, string Status, string PaymentStatus);
 public sealed record GstReportDto(IReadOnlyList<GstRateBreakdownDto> RateBreakdown, decimal TotalTaxableAmount, decimal TotalTaxAmount, int TotalInvoices);
 public sealed record GstRateBreakdownDto(decimal TaxRate, decimal TaxableAmount, decimal TaxAmount, int InvoiceCount);
 public sealed record PaymentMethodSummaryDto(string PaymentMethod, decimal TotalAmount, int TransactionCount);
 public sealed record InventoryValuationDto(Guid ProductId, string ProductName, string? Sku, decimal CurrentStock, decimal CostPrice, decimal StockValue);
 public sealed record InventoryValuationSummaryDto(IReadOnlyList<InventoryValuationDto> Items, decimal TotalStockValue, int ProductCount);
-public sealed record SalesReportSummaryDto(IReadOnlyList<SalesReportDto> Sales, decimal TotalSubTotal, decimal TotalTax, decimal TotalGrandTotal, int TotalCount);
+public sealed record SalesReportSummaryDto(IReadOnlyList<SalesReportDto> Sales, decimal TotalSubTotal, decimal TotalDiscountAmount, decimal TotalTax, decimal TotalGrandTotal, int TotalCount);
 public sealed record PaymentSummaryDto(IReadOnlyList<PaymentMethodSummaryDto> Methods, decimal TotalAmount, int TotalTransactions);
 public sealed record ReportsDashboardDto(
     ProfitLossDto ProfitLoss,

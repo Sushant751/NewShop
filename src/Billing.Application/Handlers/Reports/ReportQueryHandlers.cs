@@ -36,7 +36,7 @@ public sealed class GetProfitLossReportHandler : IRequestHandler<GetProfitLossRe
         if (cached is not null) return Result<ProfitLossDto>.Ok(cached);
 
         var row = await _reportRepository.GetProfitLossAsync(from, to, request.IsGlobalAdmin, cancellationToken);
-        var dto = new ProfitLossDto(row.Revenue, row.CostOfGoods, row.Expenses, row.GrossProfit, row.NetProfit);
+        var dto = new ProfitLossDto(row.Revenue, row.CostOfGoods, row.Expenses, row.DiscountAmount, row.GrossProfit, row.NetProfit);
 
         await _cache.SetAsync(cacheKey, dto, TimeSpan.FromMinutes(2), cancellationToken);
         return Result<ProfitLossDto>.Ok(dto);
@@ -68,12 +68,13 @@ public sealed class GetSalesReportHandler : IRequestHandler<GetSalesReportQuery,
 
         var rows = await _reportRepository.GetSalesReportAsync(from, to, request.IsGlobalAdmin, cancellationToken);
         var sales = rows
-            .Select(r => new SalesReportDto(r.SaleDate, r.InvoiceNumber, r.CustomerName, r.SubTotal, r.TaxAmount, r.GrandTotal, Enum.TryParse<SaleStatus>(r.Status, out var s) ? s.ToString() : r.Status, Enum.TryParse<PaymentStatus>(r.PaymentStatus, out var p) ? p.ToString() : r.PaymentStatus))
+            .Select(r => new SalesReportDto(r.SaleDate, r.InvoiceNumber, r.CustomerName, r.SubTotal, r.DiscountAmount, r.TaxAmount, r.GrandTotal, Enum.TryParse<SaleStatus>(r.Status, out var s) ? s.ToString() : r.Status, Enum.TryParse<PaymentStatus>(r.PaymentStatus, out var p) ? p.ToString() : r.PaymentStatus))
             .ToList();
 
         var dto = new SalesReportSummaryDto(
             sales,
             sales.Sum(s => s.SubTotal),
+            sales.Sum(s => s.DiscountAmount),
             sales.Sum(s => s.TaxAmount),
             sales.Sum(s => s.GrandTotal),
             sales.Count);
@@ -245,14 +246,14 @@ public sealed class GetReportsDashboardHandler : IRequestHandler<GetReportsDashb
         var from = request.From?.Date ?? to.Date.AddDays(-30);
 
         var plRow = await _reportRepository.GetProfitLossAsync(from, to, request.IsGlobalAdmin, cancellationToken);
-        var profitLoss = new ProfitLossDto(plRow.Revenue, plRow.CostOfGoods, plRow.Expenses, plRow.GrossProfit, plRow.NetProfit);
+        var profitLoss = new ProfitLossDto(plRow.Revenue, plRow.CostOfGoods, plRow.Expenses, plRow.DiscountAmount, plRow.GrossProfit, plRow.NetProfit);
 
         var salesRows = await _reportRepository.GetSalesReportAsync(from, to, request.IsGlobalAdmin, cancellationToken);
         var sales = salesRows
-            .Select(r => new SalesReportDto(r.SaleDate, r.InvoiceNumber, r.CustomerName, r.SubTotal, r.TaxAmount, r.GrandTotal, Enum.TryParse<SaleStatus>(r.Status, out var s) ? s.ToString() : r.Status, Enum.TryParse<PaymentStatus>(r.PaymentStatus, out var p) ? p.ToString() : r.PaymentStatus))
+            .Select(r => new SalesReportDto(r.SaleDate, r.InvoiceNumber, r.CustomerName, r.SubTotal, r.DiscountAmount, r.TaxAmount, r.GrandTotal, Enum.TryParse<SaleStatus>(r.Status, out var s) ? s.ToString() : r.Status, Enum.TryParse<PaymentStatus>(r.PaymentStatus, out var p) ? p.ToString() : r.PaymentStatus))
             .ToList();
         var salesSummary = new SalesReportSummaryDto(
-            sales, sales.Sum(s => s.SubTotal), sales.Sum(s => s.TaxAmount), sales.Sum(s => s.GrandTotal), sales.Count);
+            sales, sales.Sum(s => s.SubTotal), sales.Sum(s => s.DiscountAmount), sales.Sum(s => s.TaxAmount), sales.Sum(s => s.GrandTotal), sales.Count);
 
         var payRows = await _reportRepository.GetPaymentMethodSummaryAsync(from, to, request.IsGlobalAdmin, cancellationToken);
         var methods = payRows.Select(r => new PaymentMethodSummaryDto(Enum.TryParse<PaymentMethod>(r.PaymentMethod, out var p) ? p.ToString() : r.PaymentMethod, r.TotalAmount, r.TransactionCount)).ToList();

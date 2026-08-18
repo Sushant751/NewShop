@@ -38,6 +38,7 @@ public sealed class ReportRepository : IReportRepository
             SELECT
                 -- Total Revenue: sum of all completed sale grand totals across all shops
                 ISNULL((SELECT SUM(GrandTotal) FROM Sales WHERE IsDeleted = 0 AND Status = 3 AND SaleDate >= @From AND SaleDate < @To), 0) AS TotalSales,
+                ISNULL((SELECT SUM(DiscountAmount) FROM Sales WHERE IsDeleted = 0 AND Status = 3 AND SaleDate >= @From AND SaleDate < @To), 0) AS TotalDiscountAmount,
 
                 -- Total Purchases across all shops
                 ISNULL((SELECT SUM(GrandTotal) FROM Purchases WHERE IsDeleted = 0 AND PurchaseDate >= @From AND PurchaseDate < @To), 0) AS TotalPurchases,
@@ -66,6 +67,7 @@ public sealed class ReportRepository : IReportRepository
             SELECT
                 -- Total Revenue: sum of all completed sale grand totals
                 ISNULL((SELECT SUM(GrandTotal) FROM Sales WHERE TenantId = @TenantId AND IsDeleted = 0 AND Status = 3 AND SaleDate >= @From AND SaleDate < @To), 0) AS TotalSales,
+                ISNULL((SELECT SUM(DiscountAmount) FROM Sales WHERE TenantId = @TenantId AND IsDeleted = 0 AND Status = 3 AND SaleDate >= @From AND SaleDate < @To), 0) AS TotalDiscountAmount,
 
                 -- Total Purchases (purchase orders placed with suppliers)
                 ISNULL((SELECT SUM(GrandTotal) FROM Purchases WHERE TenantId = @TenantId AND IsDeleted = 0 AND PurchaseDate >= @From AND PurchaseDate < @To), 0) AS TotalPurchases,
@@ -99,9 +101,9 @@ public sealed class ReportRepository : IReportRepository
         var summary = await connection.QuerySingleAsync<DashboardSummary>(
             new CommandDefinition(sql, new { TenantId = tenantId, From = from, To = to }, cancellationToken: cancellationToken));
 
-        // Net Profit = Revenue - Cost of Goods Sold - Operating Expenses
+        // Net Profit = Revenue - Cost of Goods Sold - Operating Expenses - Discounts
         var cogs = summary.TotalProfit;
-        var netProfit = summary.TotalSales - cogs - summary.TotalExpenses;
+        var netProfit = summary.TotalSales - cogs - summary.TotalExpenses - summary.TotalDiscountAmount;
         return summary with { TotalProfit = netProfit };
     }
 
@@ -183,6 +185,7 @@ public sealed class ReportRepository : IReportRepository
         var sql = isGlobalAdmin ? @"
             SELECT
                 ISNULL((SELECT SUM(GrandTotal) FROM Sales WHERE IsDeleted = 0 AND Status = 3 AND SaleDate >= @From AND SaleDate < @To), 0) AS Revenue,
+                ISNULL((SELECT SUM(DiscountAmount) FROM Sales WHERE IsDeleted = 0 AND Status = 3 AND SaleDate >= @From AND SaleDate < @To), 0) AS DiscountAmount,
                 ISNULL((SELECT SUM(si.Quantity * si.CostPrice) FROM SaleItems si INNER JOIN Sales s ON s.Id = si.SaleId WHERE si.IsDeleted = 0 AND s.Status = 3 AND s.SaleDate >= @From AND s.SaleDate < @To), 0) AS CostOfGoods,
                 ISNULL((SELECT SUM(Amount) FROM Expenses WHERE IsDeleted = 0 AND ExpenseDate >= @From AND ExpenseDate < @To), 0) AS Expenses,
                 CAST(0 AS DECIMAL(18,2)) AS GrossProfit,
@@ -190,6 +193,7 @@ public sealed class ReportRepository : IReportRepository
             : @"
             SELECT
                 ISNULL((SELECT SUM(GrandTotal) FROM Sales WHERE TenantId = @TenantId AND IsDeleted = 0 AND Status = 3 AND SaleDate >= @From AND SaleDate < @To), 0) AS Revenue,
+                ISNULL((SELECT SUM(DiscountAmount) FROM Sales WHERE TenantId = @TenantId AND IsDeleted = 0 AND Status = 3 AND SaleDate >= @From AND SaleDate < @To), 0) AS DiscountAmount,
                 ISNULL((SELECT SUM(si.Quantity * si.CostPrice) FROM SaleItems si INNER JOIN Sales s ON s.Id = si.SaleId WHERE si.TenantId = @TenantId AND si.IsDeleted = 0 AND s.Status = 3 AND s.SaleDate >= @From AND s.SaleDate < @To), 0) AS CostOfGoods,
                 ISNULL((SELECT SUM(Amount) FROM Expenses WHERE TenantId = @TenantId AND IsDeleted = 0 AND ExpenseDate >= @From AND ExpenseDate < @To), 0) AS Expenses,
                 CAST(0 AS DECIMAL(18,2)) AS GrossProfit,
@@ -202,7 +206,7 @@ public sealed class ReportRepository : IReportRepository
             connection.Open();
         var row = await connection.QuerySingleAsync<ProfitLossRow>(
             new CommandDefinition(sql, new { TenantId = tenantId, From = from, To = to }, cancellationToken: cancellationToken));
-        var gross = row.Revenue - row.CostOfGoods;
+        var gross = row.Revenue - row.CostOfGoods - row.DiscountAmount;
         return row with { GrossProfit = gross, NetProfit = gross - row.Expenses };
     }
 
@@ -215,6 +219,7 @@ public sealed class ReportRepository : IReportRepository
                 s.InvoiceNumber,
                 c.Name AS CustomerName,
                 s.SubTotal,
+                s.DiscountAmount,
                 s.TaxAmount,
                 s.GrandTotal,
                 CAST(s.Status AS NVARCHAR(20)) AS Status,
@@ -230,6 +235,7 @@ public sealed class ReportRepository : IReportRepository
                 s.InvoiceNumber,
                 c.Name AS CustomerName,
                 s.SubTotal,
+                s.DiscountAmount,
                 s.TaxAmount,
                 s.GrandTotal,
                 CAST(s.Status AS NVARCHAR(20)) AS Status,

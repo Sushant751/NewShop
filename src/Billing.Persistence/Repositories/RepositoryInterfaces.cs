@@ -102,7 +102,8 @@ public sealed record DashboardSummary(
     decimal TotalSales, decimal TotalPurchases, decimal TotalExpenses,
     decimal TotalProfit, int SalesCount, int ProductCount, int CustomerCount,
     int LowStockCount, int TotalShopsCount = 0, int TotalUsersCount = 0,
-    int TotalCancelledBillsCount = 0, decimal TotalCancelledAmount = 0);
+    int TotalCancelledBillsCount = 0, decimal TotalCancelledAmount = 0,
+    decimal TotalDiscountAmount = 0);
 
 public sealed record ShopMetricsRow(
     Guid TenantId, string TenantName, string TenantSlug, string? Plan, string Status,
@@ -112,8 +113,8 @@ public sealed record ShopMetricsRow(
 
 public sealed record TopProductRow(Guid ProductId, string ProductName, decimal QuantitySold, decimal Revenue);
 public sealed record DailySalesRow(DateTime Date, decimal TotalSales, int SalesCount);
-public sealed record ProfitLossRow(decimal Revenue, decimal CostOfGoods, decimal Expenses, decimal GrossProfit, decimal NetProfit);
-public sealed record SalesReportRow(DateTime SaleDate, string InvoiceNumber, string? CustomerName, decimal SubTotal, decimal TaxAmount, decimal GrandTotal, string Status, string PaymentStatus);
+public sealed record ProfitLossRow(decimal Revenue, decimal CostOfGoods, decimal Expenses, decimal DiscountAmount, decimal GrossProfit, decimal NetProfit);
+public sealed record SalesReportRow(DateTime SaleDate, string InvoiceNumber, string? CustomerName, decimal SubTotal, decimal DiscountAmount, decimal TaxAmount, decimal GrandTotal, string Status, string PaymentStatus);
 public sealed record GstRateBreakdownRow(decimal TaxRate, decimal TaxableAmount, decimal TaxAmount, int InvoiceCount);
 public sealed record PaymentMethodSummaryRow(string PaymentMethod, decimal TotalAmount, int TransactionCount);
 public sealed record InventoryValuationRow(Guid ProductId, string ProductName, string? Sku, decimal CurrentStock, decimal CostPrice, decimal StockValue);

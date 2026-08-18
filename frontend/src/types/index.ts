@@ -392,6 +392,7 @@ export interface DashboardDto {
     totalUsersCount?: number;
     totalCancelledBillsCount?: number;
     totalCancelledAmount?: number;
+    totalDiscountAmount?: number;
     shopMetrics?: ShopMetricsDto[];
 }
 
@@ -403,6 +404,7 @@ export interface ProfitLossDto {
     revenue: number;
     costOfGoods: number;
     expenses: number;
+    discountAmount: number;
     grossProfit: number;
     netProfit: number;
 }
@@ -412,6 +414,7 @@ export interface SalesReportDto {
     invoiceNumber: string;
     customerName: string | null;
     subTotal: number;
+    discountAmount: number;
     taxAmount: number;
     grandTotal: number;
     status: string;
@@ -421,6 +424,7 @@ export interface SalesReportDto {
 export interface SalesReportSummaryDto {
     sales: SalesReportDto[];
     totalSubTotal: number;
+    totalDiscountAmount: number;
     totalTax: number;
     totalGrandTotal: number;
     totalCount: number;

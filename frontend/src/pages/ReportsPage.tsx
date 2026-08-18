@@ -199,6 +199,12 @@ function ReportsPage() {
                 </Grid>
                 <Grid item xs={12} sm={6} md={4}>
                     <Card><CardContent>
+                        <Typography color="textSecondary" variant="body2">Discount</Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 700, color: 'warning.main' }}>{formatCurrency(d.discountAmount)}</Typography>
+                    </CardContent></Card>
+                </Grid>
+                <Grid item xs={12} sm={6} md={4}>
+                    <Card><CardContent>
                         <Typography color="textSecondary" variant="body2">Gross Profit</Typography>
                         <Typography variant="h5" sx={{ fontWeight: 700 }}>{formatCurrency(d.grossProfit)}</Typography>
                     </CardContent></Card>

@@ -59,6 +59,7 @@ public sealed class GetDashboardHandler : IRequestHandler<GetDashboardQuery, Res
             summary.TotalUsersCount,
             summary.TotalCancelledBillsCount,
             summary.TotalCancelledAmount,
+            summary.TotalDiscountAmount,
             shopMetrics);
 
         await _cache.SetAsync(cacheKey, dto, TimeSpan.FromMinutes(2), cancellationToken);
