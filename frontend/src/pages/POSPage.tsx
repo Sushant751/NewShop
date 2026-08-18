@@ -334,7 +334,7 @@ function POSPage() {
                 : 0),
         0,
     );
-    const total = subtotal - discountAmount + taxAmount;
+    const total = subtotal + taxAmount - discountAmount;
     const change = paymentAmount - total;
 
     return (

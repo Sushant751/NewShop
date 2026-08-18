@@ -87,9 +87,9 @@ public sealed class CreateSaleHandler : IRequestHandler<CreateSaleCommand, Resul
                 if (product.TrackInventory && !product.AllowSaleWithoutStock && product.CurrentStock < item.Quantity)
                     throw new ConflictException($"Insufficient stock for product '{product.Name}'. Available: {product.CurrentStock}, Requested: {item.Quantity}");
 
-                var lineSubTotal = item.Quantity * item.UnitPrice - item.DiscountAmount;
-                var lineTax = product.IsTaxable ? lineSubTotal * (product.TaxRate / 100m) : 0;
-                var lineTotal = lineSubTotal + lineTax;
+                var itemBase = item.Quantity * item.UnitPrice;
+                var lineTax = product.IsTaxable ? itemBase * (product.TaxRate / 100m) : 0;
+                var lineTotal = itemBase + lineTax - item.DiscountAmount;
 
                 items.Add(new Domain.Entities.SaleItem
                 {
@@ -104,7 +104,7 @@ public sealed class CreateSaleHandler : IRequestHandler<CreateSaleCommand, Resul
                     LineTotal = lineTotal
                 });
 
-                subTotal += lineSubTotal;
+                subTotal += itemBase;
                 taxTotal += lineTax;
             }
 
