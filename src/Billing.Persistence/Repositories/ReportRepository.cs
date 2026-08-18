@@ -227,6 +227,7 @@ public sealed class ReportRepository : IReportRepository
             FROM Sales s
             LEFT JOIN Customers c ON c.Id = s.CustomerId
             WHERE s.IsDeleted = 0
+              AND s.Status = 3
               AND s.SaleDate >= @From AND s.SaleDate < @To
             ORDER BY s.SaleDate DESC;"
             : @"
@@ -243,6 +244,7 @@ public sealed class ReportRepository : IReportRepository
             FROM Sales s
             LEFT JOIN Customers c ON c.Id = s.CustomerId AND c.TenantId = s.TenantId
             WHERE s.TenantId = @TenantId AND s.IsDeleted = 0
+              AND s.Status = 3
               AND s.SaleDate >= @From AND s.SaleDate < @To
             ORDER BY s.SaleDate DESC;";
 
@@ -377,7 +379,7 @@ public sealed class ReportRepository : IReportRepository
                 CASE t.Status WHEN 1 THEN 'Active' WHEN 2 THEN 'Suspended' ELSE 'Inactive' END AS Status,
                 ISNULL((SELECT COUNT(1) FROM Users u WHERE u.TenantId = t.Id AND u.IsDeleted = 0), 0) AS UserCount,
                 ISNULL((SELECT COUNT(1) FROM Products p WHERE p.TenantId = t.Id AND p.IsDeleted = 0), 0) AS ProductCount,
-                ISNULL((SELECT COUNT(1) FROM Sales s WHERE s.TenantId = t.Id AND s.IsDeleted = 0 AND s.SaleDate >= @From AND s.SaleDate < @To), 0) AS TotalBillsGenerated,
+                ISNULL((SELECT COUNT(1) FROM Sales s WHERE s.TenantId = t.Id AND s.IsDeleted = 0 AND s.Status = 3 AND s.SaleDate >= @From AND s.SaleDate < @To), 0) AS TotalBillsGenerated,
                 ISNULL((SELECT COUNT(1) FROM Sales s WHERE s.TenantId = t.Id AND s.IsDeleted = 0 AND s.Status = 3 AND s.SaleDate >= @From AND s.SaleDate < @To), 0) AS PaidBillsCount,
                 ISNULL((SELECT COUNT(1) FROM Sales s WHERE s.TenantId = t.Id AND s.IsDeleted = 0 AND s.Status = 4 AND s.SaleDate >= @From AND s.SaleDate < @To), 0) AS CancelledBillsCount,
                 ISNULL((SELECT SUM(GrandTotal) FROM Sales s WHERE s.TenantId = t.Id AND s.IsDeleted = 0 AND s.Status = 3 AND s.SaleDate >= @From AND s.SaleDate < @To), 0) AS TotalRevenue,
